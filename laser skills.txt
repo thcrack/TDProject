@@ -1,0 +1,91 @@
+T1 R
+--
+Increases the damage.
+
+Damage: +20%
+
+T1 G
+--
+Decreases the cooldown time.
+
+Cooldown: -20%
+
+T1 B
+--
+Applies a debuff that slows enemies.
+
+Slow: 15%
+Duration: 0.2s
+
+T2 R
+--
+Increases damage based on the heat of the laser.
+
+Minimum Heat Threshold: 50%
+Maximum Bonus Damage: 200%
+
+
+T2 G
+--
+When critcal hits occured, the turret is safe from overheat for its duration.
+
+T2 B
+--
+Increases the width of the laser.
+
+Laser Width: +200%
+
+T3 R
+--
+Enemies' armor is less effective against the laser.
+
+Armor Reduction: 3/4 of the victim's armor
+
+T3 G
+--
+Increases the penetration power of the laser.
+
+Penetration: 90%
+
+T3 B
+--
+Increases the damage based on the amounts of enemies affected by the laser.
+
+Bonus Damage: +10% per enemy
+
+T4 R
+--
+Extends the critical hit period and increases the critical damage.
+
+Critical Hit Period: +50%
+Critical Damage: +100%
+
+T4 G
+--
+Increases the overheat threshold and the normal cooling rate.
+
+Overheat Threshold: +50%
+Normal Cooling Rate: +200%
+
+T4 B
+--
+Applies a debuff that slows enemies based on their missing health.
+
+Maximum Slow: 50%
+Duration: 1
+
+T5 R
+--
+I
+
+T5 G
+--
+
+T5 B
+--
+Applies a debuff on enemies. When the carrier dies, its body explodes and deals damage to all nearby enemies.
+
+Damage: 100% of DPS
+Radius: 200
+Duration: 5s
+

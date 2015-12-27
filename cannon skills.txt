@@ -1,0 +1,101 @@
+Cannon Tower:
+
+T1 R
+--
+Increases the damage.
+
+Damage Amplifier: +30%
+
+T1 G
+--
+Increases the fire rate.
+
+Fire Rate: +25%
+
+T1 B
+--
+Applies a debuff that slows enemies.
+
+Slow: 30%
+Duration: 1s
+
+T2 R
+--
+Deals additional damage based on target¡¦s current health.
+
+Damage: 7% of the target¡¦s current health
+
+T2 G
+--
+Increases the projectile speed.
+
+Projectile Speed: +100%
+
+T2 B
+--
+Applies a damaging aura on the target, hurting the enemies around the carrier but not itself.
+
+Damage: 5% of base cannon damage
+Radius: 200
+Tick Interval: 0.2s
+Duration: 2s
+
+T3 R
+--
+Applies a debuff that reduces armor.
+
+Armor Reduction: 20
+Duration: 3s
+
+T3 G
+--
+Each continuous attack on the same target stacks fire rate; loses all on changing target.
+
+Fire Rate Bonus: 15% per stack
+Max Stacks: 7
+
+T3 B
+--
+The turret now shoots cannons that explode on impact, applying debuffs to all victims.
+
+Explosion Radius: 150
+Explosion Damage: 100%
+
+T4 R
+--
+Increases critical damage.
+
+Critical Damage: +500%
+
+T4 G
+--
+Increases the chance of critical hits.
+
+Critical Chance: +15%
+
+T4 B
+--
+Increases the attack range of the turret.
+
+Attack Range: +25%
+
+T5 R
+--
+Deals bonus damage based on the missing health of the target.
+
+Maximum Bonus Damage: 300% of base cannon damage.
+
+T5 G
+--
+Increases the chance of critical hits based on the missing health of the castle.
+
+Minimum Bonus Critical Chance: 10%
+Maximum Bonus Critical Chance: 40%
+
+
+T5 B
+--
+On critical hit, applies a debuff that completely freezes the victim.
+
+Slow: 100%
+Duration: 2s
