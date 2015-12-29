@@ -5,18 +5,25 @@ static class TurretLevelData{
   static int auraBuildCost = 50;
   
   static float cannonCritChance = 0.08;
-  static float cannonCritDamageMultiplier = 3;
+  static float cannonCritDamageMultiplier = 2.5;
   static float cannonProjSize = 20;
   static float cannonProjSpeed = 10;
-  static float [] cannonDamage = {70,100,140,190,250,320,400,490,590,700,820};
-  static float [] cannonRate = {1.5,1.8,2.1,2.4,2.8,3.2,3.6,4.0,4.5,5.0,6.0};
+  static float [] cannonDamage = {60,120,180,240,300,360,420,480,540,600,660};
+  static float [] cannonRate = {1.5,1.65,1.8,1.95,2.1,2.25,2.4,2.55,2.7,2.85,3};
   static float [] cannonRange = {150,165,180,195,210,225,240,255,270,285,300};
   static int [] cannonCostA = {15,30,45,60,75,90,105,120,135,150,165};
   static int [] cannonCostB = {15,30,45,60,75,90,105,120,135,150,165};
   static int [] cannonCostC = {15,30,45,60,75,90,105,120,135,150,165};
   
-  static float [] laserDamage = {0.7,1.2,1.8,2.9,4.3,6.2,8.6,11.4,14.7,18.5,22.9};
-  static float [] laserRate = {4.0,3.6,3.2,2.8,2.4,2.0,1.6,1.2,0.8,0.4,0.2};
+  static float laserCritChance = 0.16;
+  static float laserCritDamageMultiplier = 2;
+  static float laserCritDuration = 60;
+  static float laserCritCheckInterval = 60;
+  static float laserWidth = 10;
+  static float laserOverheatThreshold = 240;
+  static float laserPiercePenaltyMultiplier = 0.7;
+  static float [] laserDamage = {2,4,6,8,10,12,14,16,18,20,22};
+  static float [] laserRate = {2.10,1.95,1.80,1.65,1.50,1.35,1.20,1.05,0.90,0.75,0.60};
   static float [] laserRange = {180,200,220,240,260,280,300,320,340,360,380};
   static int [] laserCostA = {20,40,60,80,100,120,140,160,180,200,220};
   static int [] laserCostB = {20,40,60,80,100,120,140,160,180,200,220};

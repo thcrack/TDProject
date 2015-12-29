@@ -9,6 +9,7 @@ class waveData{
     }
     switch(waveID){
       case 1:
+        //index(3,1);
         index(1,10);
         break;
       case 2:

@@ -32,10 +32,8 @@ class Projectile{
     for(int i = 0; i < sentEnemy; i++){
       if(hitDetection(i)){
         if(turret[turretID].skillState[2][2]){
-          explosion(x,y);
-          init();
+          explosion(x,y,i);
         }else{
-          init();
           applyBuff(i);
           if(checkCritTrigger(turretID,turret[turretID].critChance)){
             enemy[i].hurt(calDamage(turretID, i, turret[turretID].attackDmg, turret[turretID].critDamageMultiplier));
@@ -44,25 +42,56 @@ class Projectile{
             enemy[i].hurt(calDamage(turretID, i, turret[turretID].attackDmg, 1));
           }
         }
+        init();
+        return;
       }
     }
     if(dist(x,y,turret[turretID].x,turret[turretID].y) > distance){
-      explosion(x,y);
+      if(turret[turretID].skillState[2][2]){
+        explosion(x,y);
+      }
+      applyBuffOnMiss();
       init();
     }
   }
   
-  void explosion(float x, float y){
+  void explosion(float x, float y, int primaryID){
+    debuffIndicate(x,y,TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS,200);
     boolean crit = checkCritTrigger(turretID,turret[turretID].critChance);
     float splashDmg = turret[turretID].attackDmg * TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_DAMAGE_MULTIPLIER;
     for(int i = 0; i < sentEnemy; i++){
       if(dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS){
-        applyBuff(i);
-        if(crit){
-          enemy[i].hurt(calDamage(turretID, i, splashDmg, turret[turretID].critDamageMultiplier));
-          applyBuffOnCrit(i);
+        float distanceDecay;
+        if(i == primaryID){
+          applyBuff(i);
+          distanceDecay = turret[turretID].attackDmg;
         }else{
-          enemy[i].hurt(calDamage(turretID, i, splashDmg, 1));
+          distanceDecay = map(dist(x,y,enemy[i].x,enemy[i].y) - enemy[i].size/2,0,TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS,splashDmg,0);
+        }
+        if(crit){
+          enemy[i].hurt(calDamage(turretID, i, distanceDecay, turret[turretID].critDamageMultiplier));
+          if(i == primaryID) applyBuffOnCrit(i);
+        }else{
+          enemy[i].hurt(calDamage(turretID, i, distanceDecay, 1));
+        }
+      }
+    }
+  }
+  
+  void explosion(float x, float y){
+    debuffIndicate(x,y,TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS,200);
+    boolean crit = checkCritTrigger(turretID,turret[turretID].critChance);
+    float splashDmg = turret[turretID].attackDmg * TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_DAMAGE_MULTIPLIER;
+    for(int i = 0; i < sentEnemy; i++){
+      if(dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS){
+        //applyBuff(i);
+        float distanceDecay;
+        distanceDecay = map(dist(x,y,enemy[i].x,enemy[i].y) - enemy[i].size/2,0,TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS,splashDmg,0);
+        if(crit){
+          enemy[i].hurt(calDamage(turretID, i, distanceDecay, turret[turretID].critDamageMultiplier));
+          //applyBuffOnCrit(i);
+        }else{
+          enemy[i].hurt(calDamage(turretID, i, distanceDecay, 1));
         }
       }
     }
@@ -72,14 +101,11 @@ class Projectile{
     if(turret[turretID].skillState[0][2]){
       enemy[enemyID].getBuff(0,TurretSkillData.CANNON_SKILL_A_T3_DURATION);
     }
-    if(turret[turretID].skillState[1][2] && turret[turretID].cannonFervorStackCount <= TurretSkillData.CANNON_SKILL_B_T3_MAX_STACK){
-      turret[turretID].cannonFervorStackCount ++;
-    }
     if(turret[turretID].skillState[2][0]){
       enemy[enemyID].getBuff(1,TurretSkillData.CANNON_SKILL_C_T1_DURATION);
     }
     if(turret[turretID].skillState[2][1]){
-      enemy[enemyID].getBuff(2,TurretSkillData.CANNON_SKILL_C_T2_DURATION,turret[turretID].attackDmg);
+      enemy[enemyID].getBuff(2,TurretSkillData.CANNON_SKILL_C_T2_DURATION,turret[turretID].attackDmg,1);
     }
   }
   
@@ -87,6 +113,9 @@ class Projectile{
     if(turret[turretID].skillState[2][4]){
       enemy[enemyID].getBuff(3,TurretSkillData.CANNON_SKILL_C_T5_DURATION);
     }
+  }
+  
+  void applyBuffOnMiss(){
   }
   
   void projshow(){

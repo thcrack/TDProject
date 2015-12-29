@@ -1,5 +1,9 @@
 static class EnemyData{
   
+  //Global Attributes
+  
+  static float MIN_SPEED = 0.2;
+  
   //Normal
   
   static color NORMAL_COLOR = #FF0000;
@@ -8,7 +12,7 @@ static class EnemyData{
   static float NORMAL_POWER = 10;
   static float NORMAL_ARMOR = 15;
   static float NORMAL_SPEED = 1;
-  static int NORMAL_BOUNTY = 2;
+  static int NORMAL_BOUNTY = 3;
   
   //Fast
   
@@ -18,7 +22,7 @@ static class EnemyData{
   static float FAST_POWER = 5;
   static float FAST_ARMOR = 8;
   static float FAST_SPEED = 1.5;
-  static int FAST_BOUNTY = 1;
+  static int FAST_BOUNTY = 2;
   
   //Tank
   
@@ -28,7 +32,7 @@ static class EnemyData{
   static float TANK_POWER = 20;
   static float TANK_ARMOR = 35;
   static float TANK_SPEED = 0.6;
-  static int TANK_BOUNTY = 30;
+  static int TANK_BOUNTY = 40;
   
   //Support
   

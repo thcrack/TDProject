@@ -31,6 +31,7 @@ final int maxBulletCount = 10; //The limit of the amount of projectiles; for ind
 final int screenOffsetX = 0; //The horizonal offset of gameplay screen
 final int screenOffsetY = 50; //The vertical offset of gameplay screen
 PFont [] font = new PFont [5];
+PImage targetArrow;
 boolean [] routeGrid = new boolean[gridCount]; //Creates an array to store whether each grid is on the route
 boolean skillMenuState;
 int UIMode;
@@ -63,10 +64,12 @@ Button sell, skillMenu;
 void setup(){
   frameRate(60);
   size(1280,800,P2D);
+  targetArrow = loadImage("img/green_arrow.png");
   font[1] = createFont("ACaslonPro-Regular", 50);
-  font[2] = createFont("ACaslonPro-Regular", 30);
-  font[3] = createFont("DilleniaUPC Bold", 30);
+  font[2] = createFont("ACaslonPro-Regular", 28);
+  font[3] = createFont("DilleniaUPC Bold", 26);
   gameInit(); //Call the method gameInit() to initialize the game
+  imageMode(CENTER);
 }
 
 void draw(){
@@ -76,6 +79,7 @@ void draw(){
   translate(screenOffsetX,screenOffsetY);
   rect(0,0,gameplayScreenX,gameplayScreenY);
   stroke(255);
+  
   // Draw grids
   drawGrids();
   
@@ -120,6 +124,10 @@ boolean mouseCheck(int x, int y, int w, int h){ // Check if the mouse is in the 
   return(mouseX > x && mouseX < x + w && mouseY > y&& mouseY < y + h);
 }
 
+boolean mouseCheck(){ // Check if the mouse is in the given area data
+  return(mouseX > screenOffsetX && mouseX < screenOffsetX + gameplayScreenX && mouseY > screenOffsetY&& mouseY < screenOffsetY + gameplayScreenY);
+}
+
 boolean rectHitCheck(float ax, float ay, float aw, float ah, float bx, float by)
 {
     boolean collisionX = (ax + aw >= bx) && (bx >= ax);
@@ -149,12 +157,21 @@ boolean checkCritTrigger(int turretID, float critChance){
 float calDamage(int turretID, int enemyID, float inputDamage, float critAmp){
   float damage;
   // Result Damage = (Input Damage + Skill Additional Damage) * (Crit Amplification * Skill Crit Multiplier) * Skill Multiplier * Armor Multiplier
-  
-  damage = inputDamage + skillAddition(turretID,enemyID);
+  damage = inputDamage + skillDamageAddition(turretID,enemyID);
   critAmp *= skillCritMultiplier(turretID, critAmp);
   damage *= critAmp;
-  damage *= skillMultiplier(turretID,enemyID);
-  damage *= armorMultiplier(enemy[enemyID].armor);
+  damage *= skillDamageMultiplier(turretID,enemyID);
+  damage *= armorMultiplier(turretID, enemy[enemyID].armor);
+  //println(enemy[enemyID].armor + "/" + damageMultiplier + "/" + damage);
+  return damage;
+}
+
+float calDamage(int turretID, int enemyID, float inputDamage){
+  float damage;
+  // (NO CRIT) Result Damage = (Input Damage + Skill Additional Damage) * Skill Multiplier * Armor Multiplier
+  damage = inputDamage + skillDamageAddition(turretID,enemyID);
+  damage *= skillDamageMultiplier(turretID,enemyID);
+  damage *= armorMultiplier(turretID, enemy[enemyID].armor);
   //println(enemy[enemyID].armor + "/" + damageMultiplier + "/" + damage);
   return damage;
 }
@@ -165,6 +182,12 @@ float skillCritMultiplier(int turretID, float critAmp){
     case CANNON:
       if(turret[turretID].skillState[0][3]){
         multiplier += TurretSkillData.CANNON_SKILL_A_T4_BONUS_CRITICAL_DAMAGE_MULTIPLIER;
+      }
+      break;
+      
+    case LASER:
+      if(turret[turretID].skillState[0][3]){
+        multiplier += TurretSkillData.LASER_SKILL_A_T4_BONUS_CRITICAL_DAMAGE_MULTIPLIER;
       }
       break;
   }
@@ -186,40 +209,61 @@ float skillCritChanceAddition(int turretID){
   return addition;
 }
 
-float skillAddition(int turretID, int enemyID){
+float skillDamageAddition(int turretID, int enemyID){
   float damageAddition = 0;
   switch(turret[turretID].turretType){
     case CANNON:
-      if(turret[turretID].skillState[0][1]){
-        damageAddition += enemy[enemyID].health * TurretSkillData.CANNON_SKILL_A_T2_HP_PERCENTAGE;
+      if(turret[turretID].skillState[0][4]){
+        damageAddition += enemy[enemyID].health * TurretSkillData.CANNON_SKILL_A_T5_HP_PERCENTAGE;
       }
       break;
   }
   return damageAddition;
 }
 
-float skillMultiplier(int turretID, int enemyID){
+float skillDamageMultiplier(int turretID, int enemyID){
   float damageMultiplier = 1;
   switch(turret[turretID].turretType){
     case CANNON:
       if(turret[turretID].skillState[0][0]){
         damageMultiplier += TurretSkillData.CANNON_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
       }
-      if(turret[turretID].skillState[0][4]){
-        damageMultiplier += (1-(enemy[enemyID].health/enemy[enemyID].maxHealth)) * TurretSkillData.CANNON_SKILL_A_T5_MAXIMUM_BONUS_DAMAGE_MULTIPLIER;
+      if(turret[turretID].skillState[0][1]){
+        damageMultiplier += (1-(enemy[enemyID].health/enemy[enemyID].maxHealth)) * TurretSkillData.CANNON_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER;
+      }
+      break;
+      
+    case LASER:
+      if(turret[turretID].skillState[0][0]){
+        damageMultiplier += TurretSkillData.LASER_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
+      }
+      if(turret[turretID].skillState[0][1]){
+        damageMultiplier += max(0,map(turret[turretID].laserHeat, TurretSkillData.LASER_SKILL_A_T2_MIN_HEAT_THRESHOLD, TurretSkillData.LASER_SKILL_A_T2_MAX_DAMAGE_HEAT_CAP, 0, TurretSkillData.LASER_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER));
       }
       break;
   }
   return damageMultiplier;
 }
   
-float armorMultiplier(float inputArmor){
+float armorMultiplier(int turretID, float inputArmor){
   if(inputArmor>=0){
+    inputArmor = armorBypass(turretID, inputArmor);
     return constrain((1 - pow(inputArmor/4,2)/ (600+inputArmor)),0.1,1);
   }else{
     return (1 - inputArmor/100);
   }
   //return (1 - 0.06 * inputArmor / ( 1 + ( 0.06 * abs(inputArmor))));
+}
+
+float armorBypass(int turretID, float inputArmor){
+  switch(turret[turretID].turretType){
+    case LASER:
+      if(turret[turretID].skillState[0][2]){
+        inputArmor *= TurretSkillData.LASER_SKILL_A_T3_ARMOR_BYPASS_MULTIPLIER;
+      }
+      break;
+  }
+  return inputArmor;
 }
 
 // UI METHODS
@@ -282,7 +326,11 @@ void waveUI(){
 void timeUI(){
   textFont(font[2]);
   fill(255);
-  text("Elapsed Time: " + floor(millis()/1000), 450, 30);
+  int s = floor(millis()/1000)%60;
+  int s1 = s%10;
+  int s2 = floor(s/10);
+  int m = floor(millis()/60000);
+  text("Elapsed Time: " + m + ":" + s2 + s1, 450, 30);
 }
 
 void baseHealthUI(){
@@ -291,6 +339,11 @@ void baseHealthUI(){
   rect(1201,50,25,600);
   fill(0,255,0);
   rect(1201,50,25,600*(constrain(baseHealth/100,0,1)));
+}
+
+void targetIndicateUI(){
+  float m = 10 + 20*sin(frameCount/(PI*4));
+  image(targetArrow, turret[targetTurretID].x, turret[targetTurretID].y - m, 40, 50);
 }
 
 void turretBuildUI(){
@@ -327,16 +380,24 @@ void turretPlacementUI(){
   colorMode(HSB, 360,100,100);
   fill(frameCount%360,100,100);
   text("Place a turret by mouse", 620, 690);
+  if(!routeGrid[mouseOnGrid] && !turret[mouseOnGrid].builtState && mouseCheck()) image(targetArrow, turret[mouseOnGrid].x + screenOffsetX, turret[mouseOnGrid].y + screenOffsetY - 30, 40, 50);
   popStyle();
 }
 
 void turretUpgradeUI(){
+  targetIndicateUI();
   textFont(font[1]);
   fill(255);
   text(turret[targetTurretID].turretName, 350, 700);
+  
+  //Laser UI
+  
+  /** 
   if(turret[targetTurretID].turretType == LASER){
     laserHeatUI(410,730,265,30);
   }
+  **/
+  
   textFont(font[2]);
   skillMenu = new Button(60,720,220,40,"Skill Menu");
   skillMenu.show();
@@ -383,6 +444,7 @@ void turretUpgradeUI(){
 }
 
 void turretSkillUI(){
+  targetIndicateUI();
   textFont(font[2]);
   skillMenu = new Button(60,720,220,40,"Upgrade Menu");
   skillMenu.show();
@@ -406,7 +468,7 @@ void turretSkillUI(){
       }
       skillPurchase[i+j*5].show();
       if(mouseCheck(skillPurchase[i+j*5].x,skillPurchase[i+j*5].y,skillPurchase[i+j*5].w,skillPurchase[i+j*5].h)){
-        Button skillDescBox = new Button(skillPurchase[0].x,skillPurchase[0].y-40,20+9*turret[targetTurretID].skillDescription[j][i].length(),40,turret[targetTurretID].skillDescription[j][i],font[3]);
+        Button skillDescBox = new Button(skillPurchase[0].x,skillPurchase[0].y-40,int(textWidth(turret[targetTurretID].skillDescription[j][i])*0.7)+35,40,turret[targetTurretID].skillDescription[j][i],font[3]);
         skillDescBox.show();
         if(turret[targetTurretID].skillState[j][i]){
           Button skillCostBox = new Button(skillPurchase[0].x,skillPurchase[0].y-70,100,30,"BOUGHT",font[3],UNCLICKABLE);
@@ -519,22 +581,27 @@ void waveEnd(){
     gapTimer = 0; // Reset gapTimer
     sentEnemy = 0; // Reset the amounts of enemies sent
     timer = 0; // reset the enemy spawn timer
+    waveEndGoldBounty(currentWave);
     currentWave ++; // Change the wave count to the next
     wave.load(currentWave); // Load the data of the incoming wave
   }
 }
 
+void waveEndGoldBounty(int w){
+  gold += ceil(w*baseHealth/baseMaxHealth);
+}
+
 // ENEMY GROWTH METHODS
 
 float enemyMaxHealthGrowth(int enemyType){
-  float mult = pow(0.12*(currentWave-1),2);
+  float mult = pow(0.3*(currentWave-1),2);
   switch(enemyType){
     case ENEMY_NORMAL:
-      return 200*mult;
+      return 250*mult;
     case ENEMY_FAST:
-      return 50*mult;
+      return 60*mult;
     case ENEMY_TANK:
-      return 600*mult;
+      return 1000*mult;
     case ENEMY_SUPPORT:
       return 50*mult;
   }
@@ -560,7 +627,7 @@ float enemySpeedGrowth(int enemyType){
     case ENEMY_NORMAL:
       return 0.03*(currentWave-1);
     case ENEMY_FAST:
-      return 0.05*(currentWave-1);
+      return 0.04*(currentWave-1);
     case ENEMY_TANK:
       return 0.02*(currentWave-1);
     case ENEMY_SUPPORT:
@@ -572,11 +639,11 @@ float enemySpeedGrowth(int enemyType){
 int enemyBountyGrowth(int enemyType){
   switch(enemyType){
     case ENEMY_NORMAL:
-      return floor(0.4*(currentWave-1));
+      return floor(0.6*(currentWave-1));
     case ENEMY_FAST:
-      return floor(0.2*(currentWave-1));
+      return floor(0.3*(currentWave-1));
     case ENEMY_TANK:
-      return floor(3*(currentWave-1));
+      return floor(5*(currentWave-1));
     case ENEMY_SUPPORT:
       return floor(2*(currentWave-1));
   }
@@ -593,10 +660,18 @@ float secondConvertFrames(float x){
   return x*60;
 }
 
-void debuffIndicate(float x, float y){
+void debuffIndicate(float x, float y, float r, float str){
   noStroke();
-  fill(255,0,0,30);
-  ellipse(x,y,100,100);
+  fill(255,0,0,str);
+  ellipse(x,y,r,r);
+}
+
+void debuffIndicate(float x, float y, float r, float str, float time, float maxTime){
+  noStroke();
+  float a = time/maxTime*TWO_PI;
+  float aStart = -PI/2;
+  fill(255,0,0,str);
+  arc(x,y,r,r,aStart,a+aStart,PIE);
 }
 
 //INPUT METHODS
@@ -606,6 +681,8 @@ void keyPressed(){
   for(int i = 0; i < sentEnemy; i++){
     enemy[i].speed *= 0.5;
   }
+  //noLoop();
+  //if(mouseX>mouseY) loop();
 }
 
 void mouseReleased(){
@@ -648,7 +725,7 @@ void mouseReleased(){
         buildMode = -1;
         break;
       }
-      if(!routeGrid[mouseOnGrid] && mouseCheck(0,0,gameplayScreenX + screenOffsetX,gameplayScreenY + screenOffsetY)){ // Check if the mouse is in the screen and the grid it's on is not a route grid
+      if(!routeGrid[mouseOnGrid] && mouseCheck()){ // Check if the mouse is in the screen and the grid it's on is not a route grid
         turret[mouseOnGrid].builtState = true; // Build a turret
         turret[mouseOnGrid].turretType = buildMode;
         turret[mouseOnGrid].turretInit(buildMode);
@@ -769,7 +846,7 @@ void mouseReleased(){
 }
 
 boolean mouseCheckOnTurret(){
-  if(turret[mouseOnGrid].builtState && mouseCheck(0,0,gameplayScreenX + screenOffsetX,gameplayScreenY + screenOffsetY)){ 
+  if(turret[mouseOnGrid].builtState && mouseCheck()){ 
     return true;
   }
   return false;

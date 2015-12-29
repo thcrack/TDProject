@@ -8,7 +8,8 @@ class Enemy{
   boolean drawHurt;
   boolean buffState[] = new boolean [BuffData.BUFF_COUNT];
   float buffTimer[] = new float [BuffData.BUFF_COUNT];
-  float buffData[] = new float [BuffData.BUFF_COUNT];
+  float buffData1[] = new float [BuffData.BUFF_COUNT];
+  float buffData2[] = new float [BuffData.BUFF_COUNT];
   float hurtShowDmg;
   float size;
   float maxHealth;
@@ -115,6 +116,7 @@ class Enemy{
   
   void healthCheck(){
     if(health <= 0){
+      if(buffState[7]) volatileEffect();
       init();
       gold += bounty;
     }
@@ -128,8 +130,10 @@ class Enemy{
   }
   
   void hurt(float damage){
+    damage *= damageMultiplier();
     health -= damage;
     hurtShowDmg = damage;
+    //println(ID + " / " + damage);
     drawHurt = true;
   }
   
@@ -139,15 +143,22 @@ class Enemy{
     
     // Group: Speed
     speed *= speedMultiplier();
+    speed = max(speed,EnemyData.MIN_SPEED);
+    
+    // Size
+    size += sizeAddition();
     
     // Group: Others
     if(buffState[2]) ionicEffect();
+    if(buffState[7]) debuffIndicate(x,y,TurretSkillData.LASER_SKILL_C_T5_RADIUS,20,(buffTimer[7]-frameCount),TurretSkillData.LASER_SKILL_C_T5_DURATION);
   }
   
   void checkBuffValidity(){
     for(int i = 0; i < buffState.length; i++){
       if(buffState[i] && buffTimer[i] == frameCount){
         buffState[i] = false;
+        buffData1[i] = 0;
+        buffData2[i] = 0;
       }
     }
   }
@@ -157,36 +168,87 @@ class Enemy{
     buffTimer[buffID] = frameCount + duration;
   }
   
-  void getBuff(int buffID, float duration, float data){
+  void getBuff(int buffID, float duration, float data1, float data2){
     buffState[buffID] = true;
     buffTimer[buffID] = frameCount + duration;
-    buffData[buffID] = data;
+    buffDataProcess1(buffID, data1);
+    buffDataProcess2(buffID, data2);
+  }
+  
+  void buffDataProcess1(int ID, float data){
+    switch(ID){
+      case 2:
+        buffData1[ID] += data;
+        break;
+      case 4:
+        if(buffData1[ID] == 0) buffData1[ID] = frameCount;
+        break;
+      default:
+        buffData1[ID] = data;
+        break;
+    }
+  }
+  
+    void buffDataProcess2(int ID, float data){
+    switch(ID){
+      case 2:
+        buffData2[ID] += data;
+        break;
+      default:
+        buffData2[ID] = data;
+        break;
+    }
   }
   
   float armorReduction(){
     float amount = 0;
     if(buffState[0]){
       amount += armor * TurretSkillData.CANNON_SKILL_A_T3_ARMOR_REDUCTION_PERCENTAGE;
-      debuffIndicate(x,y);
+      debuffIndicate(x,y,40,20);
     }
     return amount;
+  }
+  
+  float damageMultiplier(){
+    float multiplier = 1;
+    if(buffState[4]){
+      multiplier += TurretSkillData.LASER_SKILL_B_T3_EXTRA_DAMAGE_MULTIPLER;
+    }
+    return multiplier;
   }
   
   float speedMultiplier(){
     float multiplier = 1;
     if(buffState[1]){
       multiplier -= TurretSkillData.CANNON_SKILL_C_T1_SLOW_PERCENTAGE;
-      debuffIndicate(x,y);
+      debuffIndicate(x,y,100,50,(buffTimer[1]-frameCount),TurretSkillData.CANNON_SKILL_C_T1_DURATION);
     }
     if(buffState[3]){
       multiplier -= TurretSkillData.CANNON_SKILL_C_T5_SLOW_PERCENTAGE;
-      debuffIndicate(x,y);
+      debuffIndicate(x,y,100,100,(buffTimer[3]-frameCount),TurretSkillData.CANNON_SKILL_C_T5_DURATION);
+    }
+    if(buffState[5]){
+      multiplier -= TurretSkillData.LASER_SKILL_C_T2_SLOW_PERCENTAGE;
+      debuffIndicate(x,y,100,100,(buffTimer[5]-frameCount),TurretSkillData.LASER_SKILL_C_T2_DURATION);
+    }
+    if(buffState[6]){
+      multiplier -= map(health,maxHealth,0,0,TurretSkillData.LASER_SKILL_C_T4_MAXIMUM_SLOW_PERCENTAGE);
+      debuffIndicate(x,y,100,100,(buffTimer[6]-frameCount),TurretSkillData.LASER_SKILL_C_T4_DURATION);
     }
     return constrain(multiplier,0,1);
   }
   
+  float sizeAddition(){
+    float addition = 0;
+    if(buffState[4]){
+      addition = (frameCount-buffData1[4])/60*TurretSkillData.LASER_SKILL_B_T3_SIZE_INFLATION_AMOUNT_PER_SEC;
+      addition = min(addition,TurretSkillData.LASER_SKILL_B_T3_MAX_INFLATION_AMOUNT);
+    }
+    return addition;
+  }
+  
   void ionicEffect(){
-    float dmg = buffData[2] * TurretSkillData.CANNON_SKILL_C_T2_BASE_CANNON_DAMAGE_PERCENTAGE;
+    float dmg = buffData1[2] * TurretSkillData.CANNON_SKILL_C_T2_BASE_CANNON_DAMAGE_PERCENTAGE;
     if( (buffTimer[2] - frameCount) % TurretSkillData.CANNON_SKILL_C_T2_DAMAGE_INTERVAL == 0){
       for(int i = 0; i < sentEnemy; i++){
         if(i != ID && dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= TurretSkillData.CANNON_SKILL_C_T2_RADIUS){
@@ -194,7 +256,17 @@ class Enemy{
         }
       }
     }
-    debuffIndicate(x,y);
+    debuffIndicate(x,y,TurretSkillData.CANNON_SKILL_C_T2_RADIUS*2,20*min(buffData2[2],6),(buffTimer[2]-frameCount),TurretSkillData.CANNON_SKILL_C_T2_DURATION);
+  }
+  
+  void volatileEffect(){
+    float dmg = maxHealth * TurretSkillData.LASER_SKILL_C_T5_MAX_HEALTH_PERCENTAGE_AS_DAMAGE;
+    for(int i = 0; i < sentEnemy; i++){
+      if(i != ID && dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= TurretSkillData.LASER_SKILL_C_T5_RADIUS){
+          enemy[i].hurt(dmg);
+      }
+    }
+    debuffIndicate(x,y,TurretSkillData.LASER_SKILL_C_T5_RADIUS*2,120);
   }
   
   void loadStat(){
@@ -249,7 +321,8 @@ class Enemy{
     for(int i = 0; i < buffState.length; i++){
       buffState[i] = false;
       buffTimer[i] = 0;
-      buffData[i] = 0;
+      buffData1[i] = 0;
+      buffData2[i] = 0;
     }
     speed = 0;
     state = false;
