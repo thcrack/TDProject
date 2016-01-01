@@ -1,0 +1,105 @@
+T1 R
+--
+Applies a buff that increases damage to nearby turrets.
+
+Damage: +50%
+
+T1 G
+--
+During crit mode, applies a buff that increases crit chance to nearby turrets.
+
+Crit Chance: 50%
+
+
+T1 B
+--
+Applies a debuff that slows the enemies.
+
+Slow Percentage: 20%
+Slow Duration: 0.25s
+
+T2 R
+--
+Creates three orbs that amplifies the damage taken, sticking on the victim until it's dead or out of range.
+
+Damage Amplification: 20%
+
+
+T2 G
+--
+When there's no enemy in the range, charges the turret to provide extra damage for later use.
+
+Maximum Bonus Damage: 200%
+Charge Rate: 45% per second
+Drain Rate: 30% per second
+
+T2 B
+--
+Deals bonus damage based on the missing health of enemies in the attack range.
+
+Bonus Damage: 0.2% every missing percentage of health
+
+T3 R
+--
+Drains a percentage of armor on every strike.
+
+Armor Drain Percentage: 3%
+
+T3 G
+--
+During crit mode, the duration is extended when an enemy dies in the attack range.
+
+Duration Extension: 50%
+
+T3 B
+--
+When entering crit mode, releases a shockwave that slows and deals damage.
+
+Max Radius: 150% of attack range
+Shockwave Width: 30% of attack range
+Slow Percentage: 20%
+Slow Duration: 1.5s
+Damage: 100% of attack damage
+
+
+T4 R
+--
+Deals bonus damage based on the distance of the victim.
+
+Maximum Bonus Damage: 200%
+Minimum Effective Range: 60% of attack range
+
+T4 G
+--
+Applies a debuff that nullifies all the buffs and keeps the armor from regenerating.
+
+Duration: 5s
+
+T4 B
+--
+Applies a debuff that makes the carrier feel the pain even when out of range.
+
+Damage Percentage: 100%
+Duration: 5s
+
+T5 R
+--
+Applies a stacking debuff, dealing damage that is multiplied each stack.
+
+Base Damage: 8% of attack damage
+Duration: 3s
+Damage Interval: 0.5s
+
+T5 G
+--
+Applies a debuff that immediately kills the carrier when its health is below the threshold.
+
+Health Threshold: 10% of max health
+Duration: 5s
+
+T5 B
+--
+Applies a debuff that causes the damage dealt to one of the enemies to be felt by the others. 
+
+Damage Percentage: 4%
+Duration: 5s

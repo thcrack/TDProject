@@ -20,7 +20,7 @@ class waveData{
         break;
       case 4:
         index(1,5);
-        index(2,5);
+        index(2,10);
         index(1,10);
         break;
       case 5:

@@ -21,6 +21,14 @@ static final int CLICKABLE = 0;
 static final int UNCLICKABLE = 1;
 static final int ENABLED = 2;
 
+static final int COLOR_WHITE = 0;
+static final int COLOR_RED = 1;
+static final int COLOR_GREEN = 2;
+static final int COLOR_RAINBOW = 3;
+
+static final int TEXT_MOVE = 0;
+static final int TEXT_NOMOVE = 1;
+
 
 final int gameplayScreenX = 1200; //The width of screen for gameplay
 final int gameplayScreenY = 600; //The height of screen for gameplay
@@ -32,10 +40,14 @@ final int screenOffsetX = 0; //The horizonal offset of gameplay screen
 final int screenOffsetY = 50; //The vertical offset of gameplay screen
 PFont [] font = new PFont [5];
 PImage targetArrow;
+PImage [] bgTiles = new PImage [20];
+PImage laserBeam;
 boolean [] routeGrid = new boolean[gridCount]; //Creates an array to store whether each grid is on the route
 boolean skillMenuState;
 int UIMode;
 int gold;
+int realFrameCount;
+int gameSpeed;
 int buildMode;
 int buildCost;
 int mouseOnGrid; //Store the information of the grid where the mouse places on
@@ -59,63 +71,80 @@ Projectile [][] proj = new Projectile [gridCount][maxBulletCount]; //Use two-dim
 Button [] upgrade = new Button [3];
 Button [] build = new Button [3];
 Button [] skillPurchase = new Button [15];
-Button sell, skillMenu;
+Button sell, skillMenu, gameSpeedChange;
+PopupText [] popupTextArray = new PopupText [25];
 
 void setup(){
   frameRate(60);
+  realFrameCount = 0;
+  gameSpeed = 1;
   size(1280,800,P2D);
+  //smooth(8);
+  laserBeam = loadImage("img/laserbeam.png");
   targetArrow = loadImage("img/green_arrow.png");
-  font[1] = createFont("ACaslonPro-Regular", 50);
-  font[2] = createFont("ACaslonPro-Regular", 28);
+  for(int i = 0; i < 20; i++){
+    bgTiles[i] = loadImage("img/bg" + i + ".png");
+  }
+  font[1] = createFont("ACaslonPro-Regular", 50, true);
+  font[2] = createFont("ACaslonPro-Regular", 28, true);
   font[3] = createFont("DilleniaUPC Bold", 26);
+  font[4] = createFont("Source Code Pro Bold", 45);
   gameInit(); //Call the method gameInit() to initialize the game
   imageMode(CENTER);
 }
 
 void draw(){
-  background(0);
-  fill(0);
-  pushMatrix();
-  translate(screenOffsetX,screenOffsetY);
-  rect(0,0,gameplayScreenX,gameplayScreenY);
-  stroke(255);
-  
-  // Draw grids
-  drawGrids();
-  
-  //Enemy's actions
-  
-  for(int i = 0; i < sentEnemy; i++){ // Command only enemies who are already sent out
-    if(enemy[i].state){ // Check if the enemy is alive or not
-      enemy[i].show();
-      enemy[i].move();
+  for(int g = 0; g < gameSpeed; g++){
+    background(0);
+    fill(0);
+    pushMatrix();
+    translate(screenOffsetX,screenOffsetY);
+    rect(0,0,gameplayScreenX,gameplayScreenY);
+    stroke(255);
+    
+    // Draw grids
+    drawGrids();
+    
+    //Enemy's actions
+    
+    for(int i = 0; i < sentEnemy; i++){ // Command only enemies who are already sent out
+      if(enemy[i].state){ // Check if the enemy is alive or not
+        enemy[i].show();
+        enemy[i].move();
+      }
     }
-  }
-  
-  //Turret's actions
-  
-  for(int i = 0; i < gridCount; i++){ // Scan through each grid because the data of turrets is bound to it
-    if(turret[i].builtState){ // Check if there is a turret on the grid
-      turret[i].show();
-      turret[i].detect();
+    
+    for(int i = 0; i < sentEnemy; i++){
+      enemy[i].popShow();
     }
-  }
-  timer ++;
-  if(timer==45 && sentEnemy < currentWaveMaxEnemy){ // When the timer is up and there are still enemies not sent out yet in the current wave
-    timer = 0; // Reset the timer
-    sentEnemy ++; // Add the amount of enemies sent
-  }
-  if(sentEnemy == currentWaveMaxEnemy){ // Check if there's no more enemy not sent out in the current wave
-    if(!enemyCheck()){ // Call the boolean method enemyCheck() to check if all enemies in the current wave are dead
-      waveEnd(); // Call the method waveEnd
+    
+    //Turret's actions
+    
+    for(int i = 0; i < gridCount; i++){ // Scan through each grid because the data of turrets is bound to it
+      if(turret[i].builtState){ // Check if there is a turret on the grid
+        turret[i].show();
+        turret[i].detect();
+      }
     }
+    timer ++;
+    if(timer==45 && sentEnemy < currentWaveMaxEnemy){ // When the timer is up and there are still enemies not sent out yet in the current wave
+      timer = 0; // Reset the timer
+      sentEnemy ++; // Add the amount of enemies sent
+    }
+    if(sentEnemy == currentWaveMaxEnemy){ // Check if there's no more enemy not sent out in the current wave
+      if(!enemyCheck()){ // Call the boolean method enemyCheck() to check if all enemies in the current wave are dead
+        waveEnd(); // Call the method waveEnd
+      }
+    }
+    if(targetTurretID!=-1){
+      rangeIndicate();
+    }
+    
+    popMatrix();
+    showUI();
+    showPopup();
+    realFrameCount++;
   }
-  if(targetTurretID!=-1){
-    rangeIndicate();
-  }
-  
-  popMatrix();
-  showUI();
 }
 
 // AREA CHECKING METHODS
@@ -156,22 +185,33 @@ boolean checkCritTrigger(int turretID, float critChance){
 
 float calDamage(int turretID, int enemyID, float inputDamage, float critAmp){
   float damage;
-  // Result Damage = (Input Damage + Skill Additional Damage) * (Crit Amplification * Skill Crit Multiplier) * Skill Multiplier * Armor Multiplier
-  damage = inputDamage + skillDamageAddition(turretID,enemyID);
+  // Result Damage = (Input Damage * (Crit Amplification * Skill Crit Multiplier) * Skill Multiplier + Skill Additional Damage) * Armor Multiplier 
+  damage = inputDamage;
   critAmp *= skillCritMultiplier(turretID, critAmp);
   damage *= critAmp;
   damage *= skillDamageMultiplier(turretID,enemyID);
-  damage *= armorMultiplier(turretID, enemy[enemyID].armor);
+  damage += skillDamageAddition(turretID,enemyID);
+  damage -= armorAbsorb(turretID, damage, enemyID, enemy[enemyID].armor);
   //println(enemy[enemyID].armor + "/" + damageMultiplier + "/" + damage);
   return damage;
 }
 
 float calDamage(int turretID, int enemyID, float inputDamage){
   float damage;
-  // (NO CRIT) Result Damage = (Input Damage + Skill Additional Damage) * Skill Multiplier * Armor Multiplier
-  damage = inputDamage + skillDamageAddition(turretID,enemyID);
+  // (NO CRIT) Result Damage = (Input Damage * Skill Multiplier + Skill Additional Damage) * Armor Multiplier 
+  damage = inputDamage;
   damage *= skillDamageMultiplier(turretID,enemyID);
-  damage *= armorMultiplier(turretID, enemy[enemyID].armor);
+  damage += skillDamageAddition(turretID,enemyID);
+  damage -= armorAbsorb(turretID, damage, enemyID, enemy[enemyID].armor);
+  //println(enemy[enemyID].armor + "/" + damageMultiplier + "/" + damage);
+  return damage;
+}
+
+float calDamage(int enemyID, float inputDamage){
+  float damage;
+  // (DAMAGING BUFF) Result Damage = Input Damage * Armor Multiplier
+  damage = inputDamage;
+  damage -= armorAbsorb(-1, damage, enemyID, enemy[enemyID].armor);
   //println(enemy[enemyID].armor + "/" + damageMultiplier + "/" + damage);
   return damage;
 }
@@ -245,25 +285,32 @@ float skillDamageMultiplier(int turretID, int enemyID){
   return damageMultiplier;
 }
   
-float armorMultiplier(int turretID, float inputArmor){
-  if(inputArmor>=0){
-    inputArmor = armorBypass(turretID, inputArmor);
-    return constrain((1 - pow(inputArmor/4,2)/ (600+inputArmor)),0.1,1);
-  }else{
-    return (1 - inputArmor/100);
+float armorAbsorb(int turretID, float inputDmg, int targetID, float inputArmor){
+  float multiplier = 1;
+  if(inputArmor>0){
+    if(turretID == -1){
+      multiplier *= EnemyData.ARMOR_ABSORB_RATIO;
+    }else{
+      multiplier *= armorBypass(turretID, EnemyData.ARMOR_ABSORB_RATIO);
+    }
+    enemy[targetID].hurtArmor(inputDmg*multiplier);
+    return inputDmg*multiplier;
   }
-  //return (1 - 0.06 * inputArmor / ( 1 + ( 0.06 * abs(inputArmor))));
+  return 0;
 }
 
-float armorBypass(int turretID, float inputArmor){
+float armorBypass(int turretID, float inputRate){
   switch(turret[turretID].turretType){
     case LASER:
       if(turret[turretID].skillState[0][2]){
-        inputArmor *= TurretSkillData.LASER_SKILL_A_T3_ARMOR_BYPASS_MULTIPLIER;
+        inputRate *= TurretSkillData.LASER_SKILL_A_T3_ARMOR_BYPASS_MULTIPLIER;
       }
       break;
+    case AURA:
+      inputRate = 0;
+      break;
   }
-  return inputArmor;
+  return inputRate;
 }
 
 // UI METHODS
@@ -275,6 +322,7 @@ void showUI(){
   fpsUI();
   waveUI();
   timeUI();
+  gameSpeedUI();
   switch(UIMode){
     case UI_BUILD:
       turretBuildUI();
@@ -333,12 +381,20 @@ void timeUI(){
   text("Elapsed Time: " + m + ":" + s2 + s1, 450, 30);
 }
 
+void gameSpeedUI(){
+  textFont(font[2]);
+  fill(255);
+  text("Game Speed: x" + gameSpeed, 900, 30);
+  gameSpeedChange = new Button(1090,3,110,40,"Change",CLICKABLE);
+  gameSpeedChange.show();
+}
+
 void baseHealthUI(){
-  noStroke();
-  fill(255,0,0);
-  rect(1201,50,25,600);
+  stroke(0,255,0);
   fill(0,255,0);
-  rect(1201,50,25,600*(constrain(baseHealth/100,0,1)));
+  rect(1200,50,25,600);
+  fill(0);
+  rect(1200,50,25,600*(1-constrain(baseHealth/100,0,1)));
 }
 
 void targetIndicateUI(){
@@ -525,6 +581,7 @@ void drawGrids(){
       int gridX = i*gridSize;
       int gridY = j*gridSize;
       pushStyle();
+      imageMode(CORNER);
       if(mouseCheck(gridX+screenOffsetX,gridY+screenOffsetY,gridSize,gridSize)){ //Check if the mouse is in the grid
         // The grid where the mouse places on is white
         fill(255);
@@ -535,11 +592,13 @@ void drawGrids(){
           colorMode(HSB,360,100,100);
           fill(frameCount%360,100,80);
         }else{
-          fill(0,255,0);
+          fill(80+80*sin(frameCount/(PI*4)),255,80+80*sin(frameCount/(PI*4)));
         }
       }else{
         // The rest of the grids are not filled with color
         noFill();
+        tint(255, 100);
+        image(bgTiles[floor(random(20))],gridX,gridY);
       }
       rect(gridX,gridY,gridSize,gridSize);
       popStyle();
@@ -551,6 +610,10 @@ void rangeIndicate(){
   stroke(255);
   noFill();
   ellipse(turret[targetTurretID].x, turret[targetTurretID].y,turret[targetTurretID].attackRange*2,turret[targetTurretID].attackRange*2);
+}
+
+void enoughGoldIndicate(){
+  callPopup("Not Enough Gold", width/2, height*3/4, 1, 26, TEXT_NOMOVE);
 }
 
 //
@@ -573,6 +636,9 @@ void gameInit(){ // Game initialization
       proj[i][j] = new Projectile();
     }
   }
+  for(int i = 1; i < popupTextArray.length; i++){
+    popupTextArray[i] = new PopupText();
+  }
 }
 
 void waveEnd(){ 
@@ -588,7 +654,7 @@ void waveEnd(){
 }
 
 void waveEndGoldBounty(int w){
-  gold += ceil(w*baseHealth/baseMaxHealth);
+  addGold(max(1,ceil(w*baseHealth/baseMaxHealth)));
 }
 
 // ENEMY GROWTH METHODS
@@ -597,11 +663,11 @@ float enemyMaxHealthGrowth(int enemyType){
   float mult = pow(0.3*(currentWave-1),2);
   switch(enemyType){
     case ENEMY_NORMAL:
-      return 250*mult;
+      return 200*mult;
     case ENEMY_FAST:
-      return 60*mult;
+      return 120*mult;
     case ENEMY_TANK:
-      return 1000*mult;
+      return 3000*mult;
     case ENEMY_SUPPORT:
       return 50*mult;
   }
@@ -609,15 +675,16 @@ float enemyMaxHealthGrowth(int enemyType){
 }
 
 float enemyArmorGrowth(int enemyType){
+  float mult = pow(0.3*(currentWave-1),2);
   switch(enemyType){
     case ENEMY_NORMAL:
-      return 1*(currentWave-1);
+      return 20*mult;
     case ENEMY_FAST:
-      return 1*(currentWave-1);
+      return 20*mult;
     case ENEMY_TANK:
-      return 1*(currentWave-1);
+      return 500*mult;
     case ENEMY_SUPPORT:
-      return 2*(currentWave-1);
+      return 2*mult;
   }
   return 0;
 }
@@ -639,11 +706,11 @@ float enemySpeedGrowth(int enemyType){
 int enemyBountyGrowth(int enemyType){
   switch(enemyType){
     case ENEMY_NORMAL:
-      return floor(0.6*(currentWave-1));
+      return floor(0.5*(currentWave-1));
     case ENEMY_FAST:
-      return floor(0.3*(currentWave-1));
+      return floor(0.25*(currentWave-1));
     case ENEMY_TANK:
-      return floor(5*(currentWave-1));
+      return floor(4*(currentWave-1));
     case ENEMY_SUPPORT:
       return floor(2*(currentWave-1));
   }
@@ -651,6 +718,33 @@ int enemyBountyGrowth(int enemyType){
 }
 
 // UTILITY METHODS
+
+void callPopup(String showText, float startX, float startY, int textColor, int fontSize, int moveMode){
+  for(int i = 1; i < popupTextArray.length; i++){
+    if(!popupTextArray[i].state){
+      popupTextArray[i] = new PopupText(showText, startX, startY, textColor, fontSize, moveMode);
+      break;
+    }
+  }
+}
+
+void showPopup(){
+  for(int i = 1; i < popupTextArray.length; i++){
+    if(popupTextArray[i].state){
+      popupTextArray[i].show();
+    }
+  }
+}
+
+void addGold(int amount){
+  gold += amount;
+  callPopup("+" + amount, 110 + screenOffsetX, 605 + screenOffsetY, 0, 45, TEXT_MOVE);
+}
+
+void spendGold(int amount){
+  gold -= amount;
+  callPopup("-" + amount, 110 + screenOffsetX, 605 + screenOffsetY, 1, 45, TEXT_MOVE);
+}
 
 float rateConvertFrames(float x){
   return 60/x;
@@ -677,10 +771,10 @@ void debuffIndicate(float x, float y, float r, float str, float time, float maxT
 //INPUT METHODS
 
 void keyPressed(){
-  gold += 100;
-  for(int i = 0; i < sentEnemy; i++){
-    enemy[i].speed *= 0.5;
-  }
+  addGold(100);
+  //for(int i = 0; i < sentEnemy; i++){
+  //  enemy[i].speed *= 0.5;
+  //}
   //noLoop();
   //if(mouseX>mouseY) loop();
 }
@@ -688,6 +782,7 @@ void keyPressed(){
 void mouseReleased(){
   switch(UIMode){
     case UI_BUILD:
+      universalUICheck();
       if(mouseCheckOnTurret()){
         targetTurretID = mouseOnGrid;
         buildMode = -1;
@@ -698,21 +793,21 @@ void mouseReleased(){
           buildMode = 0;
           buildCost = TurretLevelData.cannonBuildCost;
         }else{
-          println("Not Enough Gold!");
+          enoughGoldIndicate();
         }
       }else if(mouseCheck(build[1].x,build[1].y,build[1].w,build[1].h)){
         if(gold >= TurretLevelData.laserBuildCost){
           buildMode = 1;
           buildCost = TurretLevelData.laserBuildCost;
         }else{
-          println("Not Enough Gold!");
+          enoughGoldIndicate();
         }
       }else if(mouseCheck(build[2].x,build[2].y,build[2].w,build[2].h)){
         if(gold >= TurretLevelData.auraBuildCost){
           buildMode = 2;
           buildCost = TurretLevelData.auraBuildCost;
         }else{
-          println("Not Enough Gold!");
+          enoughGoldIndicate();
         }
       }else{
         mouseActionOnCancelSelect();
@@ -720,6 +815,7 @@ void mouseReleased(){
       break;
       
     case UI_PLACEMENT:
+      universalUICheck();
       if(mouseCheckOnTurret()){
         targetTurretID = mouseOnGrid;
         buildMode = -1;
@@ -731,13 +827,14 @@ void mouseReleased(){
         turret[mouseOnGrid].turretInit(buildMode);
         targetTurretID = mouseOnGrid;
         buildMode = -1;
-        gold -= buildCost;
+        spendGold(buildCost);
       }else{
         buildMode = -1;
       }
       break;
       
     case UI_UPGRADE:
+      universalUICheck();
       if(mouseCheckOnTurret()){
         targetTurretID = mouseOnGrid;
         buildMode = -1;
@@ -745,7 +842,7 @@ void mouseReleased(){
       }
       if(upgrade[0]!=null && mouseCheck(upgrade[0].x,upgrade[0].y,upgrade[0].w,upgrade[0].h) && turret[targetTurretID].levelA < TurretLevelData.maxLevel){
         if(gold >= turret[targetTurretID].levelAUpgradeCost){
-          gold -= turret[targetTurretID].levelAUpgradeCost;
+          spendGold(turret[targetTurretID].levelAUpgradeCost);
           turret[targetTurretID].totalCost += turret[targetTurretID].levelAUpgradeCost;
           turret[targetTurretID].levelA ++;
           switch(turret[targetTurretID].turretType){
@@ -760,11 +857,11 @@ void mouseReleased(){
               break;
           }
         }else{
-          println("Not Enough Gold!");
+          enoughGoldIndicate();
         }
       }else if(upgrade[1]!=null && mouseCheck(upgrade[1].x,upgrade[1].y,upgrade[1].w,upgrade[1].h) && turret[targetTurretID].levelB < TurretLevelData.maxLevel){
         if(gold >= turret[targetTurretID].levelBUpgradeCost){
-          gold -= turret[targetTurretID].levelBUpgradeCost;
+          spendGold(turret[targetTurretID].levelBUpgradeCost);
           turret[targetTurretID].totalCost += turret[targetTurretID].levelBUpgradeCost;
           turret[targetTurretID].levelB ++;
           switch(turret[targetTurretID].turretType){
@@ -779,11 +876,11 @@ void mouseReleased(){
               break;
           }
         }else{
-          println("Not Enough Gold!");
+          enoughGoldIndicate();
         }
       }else if(upgrade[2]!=null && mouseCheck(upgrade[2].x,upgrade[2].y,upgrade[2].w,upgrade[2].h) && turret[targetTurretID].levelC < TurretLevelData.maxLevel){
         if(gold >= turret[targetTurretID].levelCUpgradeCost){
-          gold -= turret[targetTurretID].levelCUpgradeCost;
+          spendGold(turret[targetTurretID].levelCUpgradeCost);
           turret[targetTurretID].totalCost += turret[targetTurretID].levelCUpgradeCost;
           turret[targetTurretID].levelC ++;
           switch(turret[targetTurretID].turretType){
@@ -798,10 +895,10 @@ void mouseReleased(){
               break;
           }
         }else{
-          println("Not Enough Gold!");
+          enoughGoldIndicate();
         }
       }else if(mouseCheck(sell.x,sell.y,sell.w,sell.h)){
-        gold += turret[targetTurretID].sellPrice;
+        addGold(turret[targetTurretID].sellPrice);
         turret[targetTurretID].builtState = false;
         turret[targetTurretID].turretInit(0);
         targetTurretID = -1;
@@ -813,6 +910,7 @@ void mouseReleased(){
       break;
     
     case UI_SKILL:
+      universalUICheck();
       if(mouseCheckOnTurret()){
         targetTurretID = mouseOnGrid;
         skillMenuState = false;
@@ -828,7 +926,7 @@ void mouseReleased(){
             if(mouseCheck(skillPurchase[i*5+j].x,skillPurchase[i*5+j].y,skillPurchase[i*5+j].w,skillPurchase[i*5+j].h)){
               if(skillPurchase[i*5+j].showState == CLICKABLE){
                 turret[targetTurretID].totalCost += turret[targetTurretID].skillCost[i][j];
-                gold -= turret[targetTurretID].skillCost[i][j];
+                spendGold(turret[targetTurretID].skillCost[i][j]);
                 turret[targetTurretID].skillState[i][j] = true;
               }
               clickedOnButtons = true;
@@ -842,6 +940,18 @@ void mouseReleased(){
         }
       }
       break;
+  }
+}
+
+void universalUICheck(){
+  if(mouseCheck(gameSpeedChange.x,gameSpeedChange.y,gameSpeedChange.w,gameSpeedChange.h)){
+    if(gameSpeed == 1){
+      gameSpeed = 2;
+    }else if(gameSpeed == 2){
+      gameSpeed = 4;
+    }else if(gameSpeed == 4){
+      gameSpeed = 1;
+    }
   }
 }
 

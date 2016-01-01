@@ -16,7 +16,7 @@ class Turret{
   int levelCUpgradeCost;
   int cannonFervorStackCount;
   float totalCost;
-  float [][] skillCost = new float [3][5];
+  int [][] skillCost = new int [3][5];
   int sellPrice;
   float x;
   float y;
@@ -37,12 +37,41 @@ class Turret{
   float laserDeathstarTime;
   int laserPitchforkTargetID_1;
   int laserPitchforkTargetID_2;
+  int [] auraOrbTarget = new int [TurretSkillData.AURA_SKILL_A_T4_ORB_COUNT];
   float cooldownTime;
   float projSpeed;
   float projSize;
   boolean builtState;
+  boolean buffState[] = new boolean [BuffData.BUFF_COUNT];
+  float buffTimer[] = new float [BuffData.BUFF_COUNT];
   
   void show(){
+    
+    loadStat();
+    loadSkill();
+    applyAllyBuff();
+    checkBuffValidity();
+    applyBuffEffect();
+    rateConvert();
+    if(target != -1 && cooldown && enemy[target].x > 0){
+      attack();
+    }else if(turretType == LASER){
+      laserHeat -= 3;
+      laserHeat = constrain(laserHeat,0,laserOverheatThreshold);
+    }
+    if(!cooldown){
+      if(turretType == LASER){
+        target = -1;
+      }
+      cooldownTimer();
+    }
+    if(critMode){
+      if(!skillState[1][1] || target != -1) critDurationTimer();
+    }
+    turretGraphic();
+  }
+  
+  void turretGraphic(){
     switch(turretType){
       case CANNON:
         fill(#1FEAFF);
@@ -53,6 +82,7 @@ class Turret{
         break;
         
       case LASER:
+        if(critMode) laserCritModeVisual();
         if(cooldown){
           fill(#F4F520);
         }else{
@@ -70,29 +100,17 @@ class Turret{
         fill(217,22,245,30+2*(levelA+levelB));
         ellipse(x,y,attackRange*2,attackRange*2);
         if(target != -1) critCheck();
+        if(skillState[0][3]) auraDrawOrb();
         break;
-    }
-    loadStat();
-    loadSkill();
-    rateConvert();
-    if(target != -1 && cooldown && enemy[target].x > 0){
-      attack();
-    }else if(turretType == LASER){
-      laserHeat -= 3;
-      laserHeat = constrain(laserHeat,0,laserOverheatThreshold);
-    }
-    if(!cooldown){
-      if(turretType == LASER){
-        target = -1;
-      }
-      cooldownTimer();
-    }
-    if(critMode){
-      critDurationTimer();
     }
   }
   
   void cannonFervorVisual(){
+    pushStyle();
+    colorMode(HSB, 360, 100, 100);
+    fill(frameCount*10%360,100,100,200*(float(cannonFervorStackCount)/TurretSkillData.CANNON_SKILL_B_T3_MAX_STACK));
+    ellipse(x,y,size+cannonFervorStackCount/2,size+cannonFervorStackCount/2);
+    popStyle();
     pushStyle();
     fill(0);
     textFont(font[3]);
@@ -124,7 +142,42 @@ class Turret{
       float aStart = -PI/2;
       arc(x,y,size,size,aStart,a+aStart,PIE);
     }
-    
+    popStyle();
+  }
+  
+  void laserCritModeVisual(){
+    pushStyle();
+    noStroke();
+    colorMode(HSB, 360, 100, 100);
+    fill(frameCount*20%360,100,100,200+5*levelA);
+    float a = critDurationCounter/critDuration*TWO_PI;
+    float aStart = -PI/2;
+    arc(x,y,size+10,size+10,aStart,a+aStart,PIE);
+    popStyle();
+  }
+  
+  void auraDrawOrb(){
+    pushStyle();
+    noStroke();
+    colorMode(HSB, 360, 100, 100);
+    fill(realFrameCount*10%360,50,100);
+    float leadAngle = realFrameCount/(4*PI);
+    float angleSpace = TWO_PI/auraOrbTarget.length;
+    float radius = 20;
+    float orbSize = 20;
+    for(int i = 0; i < auraOrbTarget.length; i++){
+      if(auraOrbTarget[i] != -1){
+        if(!enemy[auraOrbTarget[i]].state || dist(x, y, enemy[auraOrbTarget[i]].x, enemy[auraOrbTarget[i]].y) - enemy[auraOrbTarget[i]].size/2 > attackRange) auraOrbTarget[i] = -1;
+      }
+      if(auraOrbTarget[i] == -1){
+        ellipse(x + (radius+size/2)*cos(leadAngle+i*angleSpace), y + (radius+size/2)*sin(leadAngle+i*angleSpace), orbSize, orbSize);
+      }else{
+        ellipse(enemy[auraOrbTarget[i]].x + (radius+enemy[auraOrbTarget[i]].size/2)*cos(leadAngle+i*angleSpace), enemy[auraOrbTarget[i]].y + (radius+enemy[auraOrbTarget[i]].size/2)*sin(leadAngle+i*angleSpace),orbSize,+ orbSize);
+        strokeWeight(3);
+        stroke(realFrameCount*10%360,50,100);
+        line(enemy[auraOrbTarget[i]].x + (radius+enemy[auraOrbTarget[i]].size/2)*cos(leadAngle+i*angleSpace), enemy[auraOrbTarget[i]].y + (radius+enemy[auraOrbTarget[i]].size/2)*sin(leadAngle+i*angleSpace), enemy[auraOrbTarget[i]].x, enemy[auraOrbTarget[i]].y);
+      }
+    }
     popStyle();
   }
   
@@ -150,6 +203,57 @@ class Turret{
   
   void skillFervorReset(){
     cannonFervorStackCount = 0;
+  }
+  
+  void applyBuffEffect(){
+    attackDmg *= damageMultiplier();
+    critChance *= critChanceMultiplier();
+  }
+  
+  void applyAllyBuff(){
+    switch(turretType){
+      case AURA:
+        if(skillState[0][0]){
+          for(int i = 0; i < turret.length; i++){
+            if(dist(x, y, turret[i].x, turret[i].y) - turret[i].size/2 <= attackRange && i != turretID){
+              turret[i].getBuff(8,3);
+            }
+          }
+        }
+        if(skillState[1][0]){
+          for(int i = 0; i < turret.length; i++){
+            if(dist(x, y, turret[i].x, turret[i].y) - turret[i].size/2 <= attackRange && i != turretID){
+              turret[i].getBuff(9,3);
+            }
+          }
+        }
+        break;
+    }
+  }
+  
+  void getBuff(int buffID, float duration){
+    buffState[buffID] = true;
+    buffTimer[buffID] = realFrameCount + duration;
+  }
+  
+  void checkBuffValidity(){
+    for(int i = 0; i < buffState.length; i++){
+      if(buffState[i] && buffTimer[i] == realFrameCount){
+        buffState[i] = false;
+      }
+    }
+  }
+  
+  float damageMultiplier(){
+    float multiplier = 1;
+    if(buffState[8]) multiplier += TurretSkillData.AURA_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
+    return multiplier;
+  }
+  
+  float critChanceMultiplier(){
+    float multiplier = 1;
+    if(buffState[9]) multiplier += TurretSkillData.AURA_SKILL_B_T1_EXTRA_CRIT_CHANCE;
+    return multiplier;
   }
   
   void loadStat(){
@@ -335,13 +439,7 @@ class Turret{
         rotate(angle);
         pushStyle();
         rectMode(CENTER);
-        if(critMode){
-          fill(152,9,224,100+12*levelA);
-        }else{
-          critCheck();
-          fill(255,0,0,100+12*levelA);
-        }
-        rect(attackRange/2,0,attackRange, laserWidth);
+        laserDrawBeam();
         for(int i = 0; i < sentEnemy; i++){
           float trueHeight = enemy[i].size+laserWidth;
           float trueWidth = enemy[i].size/2+attackRange;
@@ -379,14 +477,30 @@ class Turret{
           fill(255,255,255,120);
         }
         ellipse(x,y,attackRange*2,attackRange*2);
+        int [] affectedIDList = new int [0];
         for(int i = 0; i < sentEnemy; i++){
-          if(dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= attackRange){
+          float distance = dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2;
+          if(distance <= attackRange){
+            affectedIDList = splice(affectedIDList, i, affectedIDList.length);
+            float outputDmg = attackDmg;
+            if(skillState[0][1] && distance/attackRange <= TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_EFFECTIVE_RANGE){
+              outputDmg *= 1 + (1 - (distance / (attackRange * TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_EFFECTIVE_RANGE))) * TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER;
+            }
             if(critMode){
-              enemy[i].hurt(calDamage(turretID, i, attackDmg, critDamageMultiplier));
+              enemy[i].hurt(calDamage(turretID, i, outputDmg, critDamageMultiplier));
+              enemy[i].critPop();
             }else{
-              enemy[i].hurt(calDamage(turretID, i, attackDmg));
+              enemy[i].hurt(calDamage(turretID, i, outputDmg));
+            }
+            applyBuff(i);
+            if(skillState[0][2] && enemy[i].armor > 0){
+              enemy[i].hurtArmor(enemy[i].maxArmor*TurretSkillData.AURA_SKILL_A_T3_ARMOR_DRAIN_PERCENTAGE);
             }
           }
+        }
+        if(skillState[0][3]){
+          auraOrbDetect(affectedIDList);
+          auraOrbEffect();
         }
         cooldown = false;
         cooldownTime = attackRate;
@@ -394,20 +508,37 @@ class Turret{
     }
   }
   
+  void laserDrawBeam(){
+    if(critMode){
+      colorMode(HSB, 360, 100, 100);
+      tint(frameCount*20%360,100,100,200+5*levelA);
+    }else{
+      critCheck();
+      tint(255,0,0,150+8*levelA);
+    }
+    imageMode(CENTER);
+    image(laserBeam, attackRange/2,0,attackRange, laserWidth);
+  }
+  
   void applyBuff(int enemyID){
     switch(turretType){
       case LASER:
         if(turret[turretID].skillState[1][2]){
-          enemy[enemyID].getBuff(4,TurretSkillData.LASER_SKILL_B_T3_DURATION,frameCount,0);
+          enemy[enemyID].getBuff(4,TurretSkillData.LASER_SKILL_B_T3_DURATION,realFrameCount,0);
         }
         if(turret[turretID].skillState[2][1]){
           enemy[enemyID].getBuff(5,TurretSkillData.LASER_SKILL_C_T2_DURATION);
         }
         if(turret[turretID].skillState[2][3]){
-          enemy[enemyID].getBuff(6,TurretSkillData.LASER_SKILL_C_T4_DURATION);
+          enemy[enemyID].getBuff(7,TurretSkillData.LASER_SKILL_C_T4_DURATION);
         }
         if(turret[turretID].skillState[2][4]){
-          enemy[enemyID].getBuff(7,TurretSkillData.LASER_SKILL_C_T5_DURATION);
+          enemy[enemyID].getBuff(6,TurretSkillData.LASER_SKILL_C_T5_DURATION);
+        }
+        break;
+      case AURA:
+        if(turret[turretID].skillState[0][4]){
+          enemy[enemyID].getBuff(10,TurretSkillData.AURA_SKILL_A_T5_DURATION,1,0);
         }
         break;
     }
@@ -433,13 +564,7 @@ class Turret{
     rotate(angleP);
     pushStyle();
     rectMode(CENTER);
-    if(critMode){
-      fill(152,9,224,100+12*levelA);
-    }else{
-      critCheck();
-      fill(255,0,0,100+12*levelA);
-    }
-    rect(attackRange/2,0,attackRange, laserWidth);
+    laserDrawBeam();
     for(int i = 0; i < sentEnemy; i++){
       float trueHeight = enemy[i].size+laserWidth;
       float trueWidth = enemy[i].size/2+attackRange;
@@ -493,6 +618,7 @@ class Turret{
       applyBuff(idList[i]);
       if(critMode){
         enemy[idList[i]].hurt(calDamage(turretID, idList[i], pierceDmg, critDamageMultiplier));
+        enemy[idList[i]].critPop();
       }else{
         enemy[idList[i]].hurt(calDamage(turretID, idList[i], pierceDmg));
       }
@@ -504,9 +630,9 @@ class Turret{
       if(idList[i] == -1) break;
       float pierceDmg = attackDmg * pow(laserPiercePenaltyMultiplier,i);
       pierceDmg *= dmgPct;
-      applyBuff(idList[i]);
       if(critMode){
         enemy[idList[i]].hurt(calDamage(turretID, idList[i], pierceDmg, critDamageMultiplier));
+        enemy[idList[i]].critPop();
       }else{
         enemy[idList[i]].hurt(calDamage(turretID, idList[i], pierceDmg));
       }
@@ -517,11 +643,13 @@ class Turret{
     int deathstarTarget;
     float deathstarDamage;
     deathstarDamage = attackDmg * TurretSkillData.LASER_SKILL_A_T5_BONUS_DAMAGE_MULTIPLIER;
-    if(laserDeathstarTime == 0) laserDeathstarTime = frameCount;
-    if((frameCount-laserDeathstarTime)%TurretSkillData.LASER_SKILL_A_T5_DAMAGE_INTERVAL == 0){
+    if(laserDeathstarTime == 0) laserDeathstarTime = realFrameCount;
+    if((realFrameCount-laserDeathstarTime)%TurretSkillData.LASER_SKILL_A_T5_DAMAGE_INTERVAL == 0){
       deathstarTarget = idList[floor(random(0,idList.length-1))];
-      enemy[deathstarTarget].hurt(deathstarDamage);
-      debuffIndicate(enemy[deathstarTarget].x,enemy[deathstarTarget].y,70,100);
+      if(deathstarTarget != -1){
+        enemy[deathstarTarget].hurt(deathstarDamage);
+        debuffIndicate(enemy[deathstarTarget].x,enemy[deathstarTarget].y,70,100);
+      }
     }
   }
   
@@ -549,6 +677,21 @@ class Turret{
     return multiplier;
   }
   
+  void auraOrbDetect(int [] IDList){
+    for(int i = 0; i < auraOrbTarget.length; i++){
+      if(auraOrbTarget[i] == -1){
+        auraOrbTarget[i] = IDList[floor(random(IDList.length))];
+      }
+    }
+  }
+  
+  void auraOrbEffect(){
+    for(int i = 0; i < auraOrbTarget.length; i++){
+      if(auraOrbTarget[i] != -1){
+        enemy[auraOrbTarget[i]].hurt(attackDmg*TurretSkillData.AURA_SKILL_A_T4_DAMAGE_PERCENTAGE);
+      }
+    }
+  }
   
   void turretInit(int type){
     switch(type){
@@ -612,7 +755,14 @@ class Turret{
         critCheckInterval = 60;
         critCheckCounter = 0;
         critMode = false;
+        for(int i = 0; i < auraOrbTarget.length; i++){
+          auraOrbTarget[i] = -1;
+        }
         break;
+    }
+    for(int i = 0; i < buffState.length; i++){
+      buffState[i] = false;
+      buffTimer[i] = 0;
     }
     levelA = 0;
     levelB = 0;

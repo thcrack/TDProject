@@ -37,6 +37,7 @@ class Projectile{
           applyBuff(i);
           if(checkCritTrigger(turretID,turret[turretID].critChance)){
             enemy[i].hurt(calDamage(turretID, i, turret[turretID].attackDmg, turret[turretID].critDamageMultiplier));
+            enemy[i].critPop();
             applyBuffOnCrit(i);
           }else{
             enemy[i].hurt(calDamage(turretID, i, turret[turretID].attackDmg, 1));
@@ -70,6 +71,7 @@ class Projectile{
         }
         if(crit){
           enemy[i].hurt(calDamage(turretID, i, distanceDecay, turret[turretID].critDamageMultiplier));
+          enemy[i].critPop();
           if(i == primaryID) applyBuffOnCrit(i);
         }else{
           enemy[i].hurt(calDamage(turretID, i, distanceDecay, 1));
@@ -89,6 +91,7 @@ class Projectile{
         distanceDecay = map(dist(x,y,enemy[i].x,enemy[i].y) - enemy[i].size/2,0,TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS,splashDmg,0);
         if(crit){
           enemy[i].hurt(calDamage(turretID, i, distanceDecay, turret[turretID].critDamageMultiplier));
+          enemy[i].critPop();
           //applyBuffOnCrit(i);
         }else{
           enemy[i].hurt(calDamage(turretID, i, distanceDecay, 1));
@@ -111,7 +114,7 @@ class Projectile{
   
   void applyBuffOnCrit(int enemyID){
     if(turret[turretID].skillState[2][4]){
-      enemy[enemyID].getBuff(3,TurretSkillData.CANNON_SKILL_C_T5_DURATION);
+      enemy[enemyID].getBuff(3,TurretSkillData.CANNON_SKILL_C_T5_DURATION,0);
     }
   }
   
@@ -119,8 +122,11 @@ class Projectile{
   }
   
   void projshow(){
-    fill(#F01DE6);
+    pushStyle();
+    colorMode(HSB, 360, 100, 50);
+    fill(frameCount*10%360,100,100);
     ellipse(x,y,size,size);
+    popStyle();
   }
   
   boolean hitDetection(int i){
