@@ -4,12 +4,11 @@ class waveData{
   
   void load(int inputWave){
     waveID = inputWave;
-    if(waveID>5){
-      waveID = ((waveID%5)+1);
+    if(waveID>10){
+      waveID = ((waveID%10)+1);
     }
     switch(waveID){
       case 1:
-        //index(3,1);
         index(1,10);
         break;
       case 2:
@@ -19,12 +18,31 @@ class waveData{
         index(2,15);
         break;
       case 4:
-        index(1,5);
-        index(2,10);
-        index(1,10);
+        index(1,8);
+        index(2,5);
         break;
       case 5:
         index(3,1);
+        break;
+      case 6:
+        index(1,12);
+        break;
+      case 7:
+        index(1,10);
+        index(2,5);
+        break;
+      case 8:
+        index(1,5);
+        index(2,5);
+        index(1,5);
+        break;
+      case 9:
+        index(1,5);
+        index(2,10);
+        break;
+      case 10:
+        index(3,1);
+        index(4,3);
         break;
     }
     currentWaveMaxEnemy = indexCount;

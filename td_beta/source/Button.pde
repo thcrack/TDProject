@@ -5,6 +5,7 @@ class Button{
   int y;
   PFont fontType;
   int showState;
+  boolean noticeMe;
   String word;
   
   void show(){
@@ -17,10 +18,16 @@ class Button{
     }else if(mouseCheck(x,y,w,h)){
       fill(0,255,0);
     }else{
-      fill(255);
+      if(noticeMe){
+        colorMode(HSB, 360, 100, 100);
+        fill(frameCount*8%360,30,100);
+      }else{
+        fill(255);
+      }
     }
-    strokeWeight(5);
-    stroke(0);
+    //strokeWeight(5);
+    //stroke(0);
+    noStroke();
     rect(x,y,w,h);
     fill(0);
     noStroke();
@@ -67,6 +74,28 @@ class Button{
     this.y = y;
     this.word = word;
     this.fontType = font[2];
+    showState = clickstate;
+  }
+  
+  Button(int x, int y, int w, int h, String word, int clickstate, boolean notice){
+    this.w = w;
+    this.h = h;
+    this.x = x;
+    this.y = y;
+    this.word = word;
+    this.fontType = font[2];
+    noticeMe = notice;
+    showState = clickstate;
+  }
+  
+  Button(int x, int y, int w, int h, String word, PFont font, int clickstate, boolean notice){
+    this.w = w;
+    this.h = h;
+    this.x = x;
+    this.y = y;
+    this.word = word;
+    this.fontType = font;
+    noticeMe = notice;
     showState = clickstate;
   }
   

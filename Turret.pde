@@ -4,6 +4,7 @@ class Turret{
   boolean [][] skillState = new boolean [3][5];
   int turretID;
   int turretType;
+  color turretColor;
   String turretName;
   String [][] skillName = new String [3][5];
   String [][] skillDescription = new String [3][5];
@@ -20,7 +21,7 @@ class Turret{
   int sellPrice;
   float x;
   float y;
-  float size = 40;
+  float size;
   float attackRate;
   float attackRange;
   float attackDmg;
@@ -38,6 +39,10 @@ class Turret{
   int laserPitchforkTargetID_1;
   int laserPitchforkTargetID_2;
   int [] auraOrbTarget = new int [TurretSkillData.AURA_SKILL_A_T4_ORB_COUNT];
+  float auraMeditationCharge;
+  float auraDecrepifyBonus;
+  float auraShockwaveRadius;
+  boolean auraShockwaveState;
   float cooldownTime;
   float projSpeed;
   float projSize;
@@ -46,8 +51,8 @@ class Turret{
   float buffTimer[] = new float [BuffData.BUFF_COUNT];
   
   void show(){
-    
     loadStat();
+    size = 36 + levelA;
     loadSkill();
     applyAllyBuff();
     checkBuffValidity();
@@ -66,56 +71,83 @@ class Turret{
       cooldownTimer();
     }
     if(critMode){
-      if(!skillState[1][1] || target != -1) critDurationTimer();
+      if(!skillState[1][1] || target != -1 || turretType != LASER) critDurationTimer();
     }
+    if(turretType == AURA && auraShockwaveState) auraShockwave();
     turretGraphic();
   }
   
   void turretGraphic(){
     switch(turretType){
       case CANNON:
-        fill(#1FEAFF);
-        noStroke();
-        ellipse(x,y,size,size);
-        if(skillState[1][2]) cannonFervorVisual();
+        drawShadow();
         moveBullet();
+        fill(turretColor);
+        noStroke();
+        ellipse(x,y-(levelC/2),size,size);
+        fill(255,levelB*10*(1+sin(realFrameCount/(2*PI))));
+        ellipse(x,y-(levelC/2),size,size);
+        if(skillState[1][2]) cannonFervorVisual();
         break;
         
       case LASER:
+        drawShadow();
         if(critMode) laserCritModeVisual();
         if(cooldown){
-          fill(#F4F520);
+          fill(turretColor);
         }else{
-          fill(#FF750A);
+          fill(TurretLevelData.LASER_OVERHEAT_COLOR);
         }
         noStroke();
-        ellipse(x,y,size,size);
+        ellipse(x,y-(levelC/2),size,size);
+        fill(255,levelB*10*(1+sin(realFrameCount/(2*PI))));
+        ellipse(x,y-(levelC/2),size,size);
         laserHeatVisual();
         break;
         
       case AURA:
-        fill(#D916F7);
+        if(critMode) auraCritModeVisual();
+        drawShadow();
+        fill(turretColor);
         noStroke();
-        ellipse(x,y,size,size);
+        ellipse(x,y-(levelC/2),size,size);
+        fill(255,levelB*10*(1+sin(realFrameCount/(2*PI))));
+        ellipse(x,y-(levelC/2),size,size);
         fill(217,22,245,30+2*(levelA+levelB));
-        ellipse(x,y,attackRange*2,attackRange*2);
+        ellipse(x,y-(levelC/2),attackRange*2,attackRange*2);
         if(target != -1) critCheck();
         if(skillState[0][3]) auraDrawOrb();
+        if(skillState[1][1]){
+          auraMeditationProcess();
+          auraMeditationVisual();
+        }
         break;
     }
+  }
+  
+  void drawShadow(){
+    noStroke();
+    if(turretType==LASER && !cooldown){
+      fill(lerpColor(TurretLevelData.LASER_OVERHEAT_COLOR,color(0),0.3));
+    }else{
+      fill(lerpColor(turretColor,color(0),0.3));
+    }
+    ellipse(x,y+2,size-1,size);
+    fill(255,levelB*3*(1+sin(realFrameCount/(2*PI))));
+    ellipse(x,y+2,size-1,size);
   }
   
   void cannonFervorVisual(){
     pushStyle();
     colorMode(HSB, 360, 100, 100);
     fill(frameCount*10%360,100,100,200*(float(cannonFervorStackCount)/TurretSkillData.CANNON_SKILL_B_T3_MAX_STACK));
-    ellipse(x,y,size+cannonFervorStackCount/2,size+cannonFervorStackCount/2);
+    ellipse(x,y-(levelC/2),size+cannonFervorStackCount/2,size+cannonFervorStackCount/2);
     popStyle();
     pushStyle();
     fill(0);
     textFont(font[3]);
     textAlign(CENTER,CENTER);
-    text(cannonFervorStackCount,x,y);
+    text(cannonFervorStackCount,x,y-(levelC/2));
     popStyle();
   }
   
@@ -136,11 +168,11 @@ class Turret{
     if(cooldown){
       float a = laserHeat/laserOverheatThreshold*TWO_PI;
       float aStart = -PI/2;
-      arc(x,y,size,size,aStart,a+aStart,PIE);
+      arc(x,y-(levelC/2),size,size,aStart,a+aStart,PIE);
     }else{
       float a = cooldownTime/attackRate*TWO_PI;
       float aStart = -PI/2;
-      arc(x,y,size,size,aStart,a+aStart,PIE);
+      arc(x,y-(levelC/2),size,size,aStart,a+aStart,PIE);
     }
     popStyle();
   }
@@ -152,7 +184,18 @@ class Turret{
     fill(frameCount*20%360,100,100,200+5*levelA);
     float a = critDurationCounter/critDuration*TWO_PI;
     float aStart = -PI/2;
-    arc(x,y,size+10,size+10,aStart,a+aStart,PIE);
+    arc(x,y-(levelC/2),size+10,size+10,aStart,a+aStart,PIE);
+    popStyle();
+  }
+  
+  void auraCritModeVisual(){
+    pushStyle();
+    noStroke();
+    colorMode(HSB, 360, 100, 100);
+    fill(frameCount*20%360,100,100,200+5*levelA);
+    float a = critDurationCounter/critDuration*TWO_PI;
+    float aStart = -PI/2;
+    arc(x,y-(levelC/2),size+10,size+10,aStart,a+aStart,PIE);
     popStyle();
   }
   
@@ -161,16 +204,16 @@ class Turret{
     noStroke();
     colorMode(HSB, 360, 100, 100);
     fill(realFrameCount*10%360,50,100);
-    float leadAngle = realFrameCount/(4*PI);
+    float leadAngle = (realFrameCount+x+y)/(4*PI);
     float angleSpace = TWO_PI/auraOrbTarget.length;
-    float radius = 20;
+    float radius = 20 + 20*sin(realFrameCount/(4*PI));
     float orbSize = 20;
     for(int i = 0; i < auraOrbTarget.length; i++){
       if(auraOrbTarget[i] != -1){
         if(!enemy[auraOrbTarget[i]].state || dist(x, y, enemy[auraOrbTarget[i]].x, enemy[auraOrbTarget[i]].y) - enemy[auraOrbTarget[i]].size/2 > attackRange) auraOrbTarget[i] = -1;
       }
       if(auraOrbTarget[i] == -1){
-        ellipse(x + (radius+size/2)*cos(leadAngle+i*angleSpace), y + (radius+size/2)*sin(leadAngle+i*angleSpace), orbSize, orbSize);
+        ellipse(x + (radius+size/2)*cos(leadAngle+i*angleSpace), y-levelC/2 + (radius+size/2)*sin(leadAngle+i*angleSpace), orbSize, orbSize);
       }else{
         ellipse(enemy[auraOrbTarget[i]].x + (radius+enemy[auraOrbTarget[i]].size/2)*cos(leadAngle+i*angleSpace), enemy[auraOrbTarget[i]].y + (radius+enemy[auraOrbTarget[i]].size/2)*sin(leadAngle+i*angleSpace),orbSize,+ orbSize);
         strokeWeight(3);
@@ -181,11 +224,27 @@ class Turret{
     popStyle();
   }
   
+  void auraMeditationVisual(){
+    float ratio = auraMeditationCharge/TurretSkillData.AURA_SKILL_B_T2_MAXIMUM_BONUS_DAMAGE;
+    pushStyle();
+    noStroke();
+    fill(255,120);
+    rect(x-5,y-levelC/2-15,10,30);
+    fill(255,255*(1-ratio),255*(1-ratio));
+    rect(x-5, y-levelC/2-15+30*(1-ratio),10,30*ratio);
+    textFont(font[3]);
+    textAlign(CENTER,CENTER);
+    fill(255);
+    text("x" + (1+round(auraMeditationCharge)),x,y-levelC/2);
+    popStyle();
+  }
+  
   void critCheck(){
     critCheckCounter ++;
     if(critCheckCounter >= critCheckInterval){
       if(checkCritTrigger(turretID,critChance)){
         critMode = true;
+        if(skillState[2][2]) auraShockwaveState  = true;
         critCheckCounter = 0;
         critDurationCounter = critDuration;
       }else{
@@ -213,18 +272,10 @@ class Turret{
   void applyAllyBuff(){
     switch(turretType){
       case AURA:
-        if(skillState[0][0]){
-          for(int i = 0; i < turret.length; i++){
-            if(dist(x, y, turret[i].x, turret[i].y) - turret[i].size/2 <= attackRange && i != turretID){
-              turret[i].getBuff(8,3);
-            }
-          }
-        }
-        if(skillState[1][0]){
-          for(int i = 0; i < turret.length; i++){
-            if(dist(x, y, turret[i].x, turret[i].y) - turret[i].size/2 <= attackRange && i != turretID){
-              turret[i].getBuff(9,3);
-            }
+        for(int i = 0; i < turret.length; i++){
+          if(dist(x, y, turret[i].x, turret[i].y) - turret[i].size/2 <= attackRange && i != turretID){
+            if(skillState[0][0]) turret[i].getBuff(8,3);
+            if(skillState[1][0] && critMode) turret[i].getBuff(9,3);
           }
         }
         break;
@@ -282,6 +333,10 @@ class Turret{
         break;
         
       case AURA:
+        critChance = TurretLevelData.auraCritChance;
+        critDamageMultiplier = TurretLevelData.auraCritDamageMultiplier;
+        critDuration = TurretLevelData.auraCritDuration;
+        critCheckInterval = TurretLevelData.auraCritCheckInterval;
         attackDmg = TurretLevelData.auraDamage[levelA];
         attackRate = TurretLevelData.auraRate[levelB];
         attackRange = TurretLevelData.auraRange[levelC];
@@ -371,18 +426,37 @@ class Turret{
         break;
     }
   }
+  
+  float frameConvert(){
+    float frames = 0;
+    switch(turretType){
+      case CANNON:
+        frames = framesConvertRate(attackRate);
+        break;
+        
+      case LASER:
+        frames = framesConvertSecond(attackRate);
+        break;
+        
+      case AURA:
+        frames = framesConvertRate(attackRate);
+        break;
+    }
+    return frames;
+  }
 
   void detect(){
     float targetDist = 1500;
     if(target==-1){
       for(int i = 0; i < sentEnemy; i++){
-        if(dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= attackRange && dist(x, y, enemy[i].x, enemy[i].y) < targetDist){
+        float distance = dist(x, y, enemy[i].x, enemy[i].y);
+        if( ( distance  - enemy[i].size/2 <= attackRange && distance < targetDist ) || ( turretType == AURA && skillState[2][3] && enemy[i].buffState[15] )){
           targetDist = dist(x, y, enemy[i].x, enemy[i].y);
           target = i;
         }
       }
     }
-    if(target != -1 && dist(x, y, enemy[target].x, enemy[target].y) - enemy[target].size/2 > attackRange){
+    if(target != -1 && dist(x, y, enemy[target].x, enemy[target].y) - enemy[target].size/2 > attackRange  && !( turretType == AURA && skillState[2][3] && enemy[target].buffState[15] )){
       target = -1;
       skillFervorReset();
     }
@@ -478,26 +552,46 @@ class Turret{
         }
         ellipse(x,y,attackRange*2,attackRange*2);
         int [] affectedIDList = new int [0];
+        int [] syncIDList = new int [0];
+        float [] distList = new float [sentEnemy];
         for(int i = 0; i < sentEnemy; i++){
-          float distance = dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2;
-          if(distance <= attackRange){
+          distList[i] = dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2;
+          if(distList[i] <= attackRange){
             affectedIDList = splice(affectedIDList, i, affectedIDList.length);
-            float outputDmg = attackDmg;
-            if(skillState[0][1] && distance/attackRange <= TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_EFFECTIVE_RANGE){
-              outputDmg *= 1 + (1 - (distance / (attackRange * TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_EFFECTIVE_RANGE))) * TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER;
-            }
+          }else if(enemy[i].buffState[15]){
+            syncIDList = splice(syncIDList, i, syncIDList.length);
+          }
+        }
+        
+        if(auraShockwaveState) affectedIDList = auraShockwaveListing(affectedIDList, distList);
+        
+        if(skillState[2][1]) auraCalDecrepifyBonus(affectedIDList);
+        
+        for(int i = 0; i < affectedIDList.length; i++){
+          if(critMode){
+            enemy[affectedIDList[i]].hurt(calDamage(turretID, affectedIDList[i], attackDmg, critDamageMultiplier));
+            applyBuffOnCrit(affectedIDList[i]);
+            enemy[affectedIDList[i]].critPop();
+          }else{
+            enemy[affectedIDList[i]].hurt(calDamage(turretID, affectedIDList[i], attackDmg));
+          }
+          applyBuff(affectedIDList[i]);
+          if(skillState[0][2] && enemy[affectedIDList[i]].armor > 0){
+            enemy[affectedIDList[i]].hurtArmor(enemy[affectedIDList[i]].maxArmor*TurretSkillData.AURA_SKILL_A_T3_ARMOR_DRAIN_PERCENTAGE);
+          }
+        }
+        
+        if(skillState[2][3]){
+          for(int i = 0; i < syncIDList.length; i++){
             if(critMode){
-              enemy[i].hurt(calDamage(turretID, i, outputDmg, critDamageMultiplier));
-              enemy[i].critPop();
+              enemy[syncIDList[i]].hurt(calDamage(turretID, syncIDList[i], attackDmg, critDamageMultiplier));
+              enemy[syncIDList[i]].critPop();
             }else{
-              enemy[i].hurt(calDamage(turretID, i, outputDmg));
-            }
-            applyBuff(i);
-            if(skillState[0][2] && enemy[i].armor > 0){
-              enemy[i].hurtArmor(enemy[i].maxArmor*TurretSkillData.AURA_SKILL_A_T3_ARMOR_DRAIN_PERCENTAGE);
+              enemy[syncIDList[i]].hurt(calDamage(turretID, syncIDList[i], attackDmg));
             }
           }
         }
+        
         if(skillState[0][3]){
           auraOrbDetect(affectedIDList);
           auraOrbEffect();
@@ -538,7 +632,32 @@ class Turret{
         break;
       case AURA:
         if(turret[turretID].skillState[0][4]){
-          enemy[enemyID].getBuff(10,TurretSkillData.AURA_SKILL_A_T5_DURATION,1,0);
+          enemy[enemyID].getBuff(10,TurretSkillData.AURA_SKILL_A_T5_DURATION,1,attackDmg);
+        }
+        if(turret[turretID].skillState[1][3]){
+          enemy[enemyID].getBuff(17,TurretSkillData.AURA_SKILL_B_T4_DURATION);
+        }
+        if(turret[turretID].skillState[1][4]){
+          enemy[enemyID].getBuff(12,TurretSkillData.AURA_SKILL_B_T5_DURATION);
+        }
+        if(turret[turretID].skillState[2][0]){
+          enemy[enemyID].getBuff(13,TurretSkillData.AURA_SKILL_C_T1_DURATION);
+        }
+        if(turret[turretID].skillState[2][3]){
+          enemy[enemyID].getBuff(15,TurretSkillData.AURA_SKILL_C_T4_DURATION);
+        }
+        if(turret[turretID].skillState[2][4]){
+          enemy[enemyID].getBuff(16,TurretSkillData.AURA_SKILL_C_T5_DURATION);
+        }
+        break;
+    }
+  }
+  
+  void applyBuffOnCrit(int enemyID){
+    switch(turretType){
+      case AURA:
+        if(turret[turretID].skillState[1][2]){
+          enemy[enemyID].getBuff(11,3);
         }
         break;
     }
@@ -647,8 +766,10 @@ class Turret{
     if((realFrameCount-laserDeathstarTime)%TurretSkillData.LASER_SKILL_A_T5_DAMAGE_INTERVAL == 0){
       deathstarTarget = idList[floor(random(0,idList.length-1))];
       if(deathstarTarget != -1){
+        //laserDeathstarEffectList = splice(laserDeathstarEffectList,deathstarTarget,laserDeathstarEffectList.length);
+        enemy[deathstarTarget].dsVisualState = true;
+        enemy[deathstarTarget].dsTime = realFrameCount;
         enemy[deathstarTarget].hurt(deathstarDamage);
-        debuffIndicate(enemy[deathstarTarget].x,enemy[deathstarTarget].y,70,100);
       }
     }
   }
@@ -693,11 +814,61 @@ class Turret{
     }
   }
   
+  void auraMeditationProcess(){
+    if(target==-1){
+      auraMeditationCharge += TurretSkillData.AURA_SKILL_B_T2_CHARGE_RATE_PER_SEC / 60;
+      auraMeditationCharge = min(auraMeditationCharge, TurretSkillData.AURA_SKILL_B_T2_MAXIMUM_BONUS_DAMAGE);
+    }else{
+      auraMeditationCharge -= TurretSkillData.AURA_SKILL_B_T2_DRAIN_RATE_PER_SEC / 60;
+      auraMeditationCharge = max(auraMeditationCharge, 0);
+    }
+  }
+  
+  void auraCalDecrepifyBonus(int [] IDList){
+    float amount = 0;
+    for(int i = 0; i < IDList.length; i++){
+      amount += (1-(enemy[IDList[i]].health/enemy[IDList[i]].maxHealth))*100*TurretSkillData.AURA_SKILL_C_T2_BONUS_DAMAGE_PER_PERCENT_OF_MISSING_HEALTH;
+    }
+    auraDecrepifyBonus = amount;
+  }
+  
+  void auraShockwave(){
+    float speed = attackRange * TurretSkillData.AURA_SKILL_C_T3_SHOCKWAVE_SPEED_RATIO;
+    float maxRange = attackRange * TurretSkillData.AURA_SKILL_C_T3_MAX_RADIUS_RATIO;
+    auraShockwaveRadius += speed;
+    if(auraShockwaveRadius > maxRange){
+      auraShockwaveInit();
+    }
+    auraShockwaveRadius = min(auraShockwaveRadius, maxRange);
+    pushStyle();
+    imageMode(CENTER);
+    if(auraShockwaveRadius >= maxRange*0.7) tint(255,255*map(auraShockwaveRadius,maxRange*0.7,maxRange,1,0));
+    image(shockwave,x,y,auraShockwaveRadius*2,auraShockwaveRadius*2);
+    popStyle();
+  }
+  
+  int [] auraShockwaveListing(int [] IDList, float [] distList){
+    for(int i = 0; i < sentEnemy; i++){
+      float d = distList[i] - enemy[i].size/2;
+      if(d <= auraShockwaveRadius){
+        IDList = splice(IDList, i, IDList.length);
+        enemy[i].getBuff(14,TurretSkillData.AURA_SKILL_C_T3_SLOW_DURATION);
+      }
+    }
+    return IDList;
+  }
+  
+  void auraShockwaveInit(){
+    auraShockwaveRadius = 0;
+    auraShockwaveState = false;
+  }
+  
   void turretInit(int type){
     switch(type){
       case CANNON:
         turretType = CANNON;
         turretName = "Cannon Turret";
+        turretColor = TurretLevelData.CANNON_COLOR;
         levelAUpgradeCost = TurretLevelData.cannonCostA[levelA];
         levelBUpgradeCost = TurretLevelData.cannonCostB[levelB];
         levelCUpgradeCost = TurretLevelData.cannonCostC[levelC];
@@ -715,6 +886,7 @@ class Turret{
       case LASER:
         turretType = LASER;
         turretName = "Laser Turret";
+        turretColor = TurretLevelData.LASER_COLOR;
         levelAUpgradeCost = TurretLevelData.laserCostA[levelA];
         levelBUpgradeCost = TurretLevelData.laserCostB[levelB];
         levelCUpgradeCost = TurretLevelData.laserCostC[levelC];
@@ -741,6 +913,7 @@ class Turret{
       case AURA:
         turretType = AURA;
         turretName = "Aura Turret";
+        turretColor = TurretLevelData.AURA_COLOR;
         levelAUpgradeCost = TurretLevelData.auraCostA[levelA];
         levelBUpgradeCost = TurretLevelData.auraCostB[levelB];
         levelCUpgradeCost = TurretLevelData.auraCostC[levelC];
@@ -758,6 +931,9 @@ class Turret{
         for(int i = 0; i < auraOrbTarget.length; i++){
           auraOrbTarget[i] = -1;
         }
+        auraMeditationCharge = 0;
+        auraDecrepifyBonus = 0;
+        auraShockwaveInit();
         break;
     }
     for(int i = 0; i < buffState.length; i++){
@@ -938,8 +1114,20 @@ class Turret{
     turretID = gridPos;
     x = floor(gridPos/10) * gridSize + 30;
     y = (gridPos - floor(gridPos/10)*10) * gridSize + 30;
+    size = 36;
     target = -1;
     turretInit(0);
     builtState = false;
+  }
+  
+  Turret(int gridPos, int type){
+    turretID = gridPos;
+    turretType = type;
+    size = 36;
+    x = floor(gridPos/10) * gridSize + 30;
+    y = (gridPos - floor(gridPos/10)*10) * gridSize + 30;
+    target = -1;
+    turretInit(type);
+    builtState = true;
   }
 }

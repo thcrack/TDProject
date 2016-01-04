@@ -16,7 +16,7 @@ static class TurretSkillData{
       //T1
   static String CANNON_SKILL_A_T1_NAME = "Steady Aim";
   static String CANNON_SKILL_A_T1_DESCRIPTION = "Greatly increases the damage.";
-  static float CANNON_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER = 1.0;
+  static float CANNON_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER = 0.5;
   
       //T2
   static String CANNON_SKILL_A_T2_NAME = "Reaper";
@@ -55,19 +55,19 @@ static class TurretSkillData{
       //T3
   static String CANNON_SKILL_B_T3_NAME = "Fervor";
   static String CANNON_SKILL_B_T3_DESCRIPTION = "Each continuous attack on the same target stacks fire rate; loses all on changing target.";
-  static float CANNON_SKILL_B_T3_BONUS_FIRE_RATE_MULTIPLIER_PER_STACK = 0.1;
-  static int CANNON_SKILL_B_T3_MAX_STACK = 10;
+  static float CANNON_SKILL_B_T3_BONUS_FIRE_RATE_MULTIPLIER_PER_STACK = 0.15;
+  static int CANNON_SKILL_B_T3_MAX_STACK = 15;
   
       //T4
   static String CANNON_SKILL_B_T4_NAME = "Bore";
   static String CANNON_SKILL_B_T4_DESCRIPTION = "Greatly increases the chance of critical hits.";
-  static float CANNON_SKILL_B_T4_BONUS_CRIT_CHANCE = 0.12;
+  static float CANNON_SKILL_B_T4_BONUS_CRIT_CHANCE = 0.15;
   
       //T5
   static String CANNON_SKILL_B_T5_NAME = "Death Wish";
   static String CANNON_SKILL_B_T5_DESCRIPTION = "Increases the chance of critical hits based on the missing health of the castle.";
-  static float CANNON_SKILL_B_T5_MIN_BONUS_CRIT_CHANCE = 0.08;
-  static float CANNON_SKILL_B_T5_MAX_BONUS_CRIT_CHANCE = 0.24;
+  static float CANNON_SKILL_B_T5_MIN_BONUS_CRIT_CHANCE = 0.05;
+  static float CANNON_SKILL_B_T5_MAX_BONUS_CRIT_CHANCE = 0.30;
   
     //LevelC
     
@@ -82,8 +82,8 @@ static class TurretSkillData{
   static String CANNON_SKILL_C_T2_DESCRIPTION = "Applies a damaging aura on the target, hurting the enemies around the carrier but not itself.";
   static float CANNON_SKILL_C_T2_BASE_CANNON_DAMAGE_PERCENTAGE = 0.01;
   static float CANNON_SKILL_C_T2_RADIUS = 180;
-  static float CANNON_SKILL_C_T2_DAMAGE_INTERVAL = 6;
-  static float CANNON_SKILL_C_T2_DURATION = 480;
+  static float CANNON_SKILL_C_T2_DAMAGE_INTERVAL = 3;
+  static float CANNON_SKILL_C_T2_DURATION = 240;
   
       //T3
   static String CANNON_SKILL_C_T3_NAME = "Boombastics";
@@ -202,7 +202,7 @@ static class TurretSkillData{
   static float LASER_SKILL_C_T4_DURATION = 600;
   
       //T5
-  static String LASER_SKILL_C_T5_NAME = "Breach Module";
+  static String LASER_SKILL_C_T5_NAME = "Breach";
   static String LASER_SKILL_C_T5_DESCRIPTION = "Applies a debuff that slows enemies based on their missing health.";
   static float LASER_SKILL_C_T5_MAXIMUM_SLOW_PERCENTAGE = 0.20;
   static float LASER_SKILL_C_T5_DURATION = 3;
@@ -236,15 +236,16 @@ static class TurretSkillData{
       //T4
   static String AURA_SKILL_A_T4_NAME = "Nano Death Machine";
   static String AURA_SKILL_A_T4_DESCRIPTION = "Creates orbs that damage random enemies, sticking on the victim until it's dead or out of range.";
-  static float AURA_SKILL_A_T4_DAMAGE_PERCENTAGE = 0.3;
+  static float AURA_SKILL_A_T4_DAMAGE_PERCENTAGE = 0.6;
   static int AURA_SKILL_A_T4_ORB_COUNT = 6;
   
       //T5
   static String AURA_SKILL_A_T5_NAME = "Cancer";
-  static String AURA_SKILL_A_T5_DESCRIPTION = "Applies a stacking debuff, dealing damage that is multiplied each stack.";
-  static float AURA_SKILL_A_T5_BASE_DAMAGE_PERCENTAGE = 0.005;
-  static float AURA_SKILL_A_T5_DURATION = 300;
-  static float AURA_SKILL_A_T5_DAMAGE_INTERVAL = 30;
+  static String AURA_SKILL_A_T5_DESCRIPTION = "Applies a stacking debuff, dealing damage that is multiplied every 3 stacks.";
+  static float AURA_SKILL_A_T5_BASE_DAMAGE_PERCENTAGE = 0.01;
+  static float AURA_SKILL_A_T5_STACK_CAP = 36;
+  static float AURA_SKILL_A_T5_DURATION = 150;
+  static float AURA_SKILL_A_T5_DAMAGE_INTERVAL = 15;
   
   
     //LevelB
@@ -252,29 +253,28 @@ static class TurretSkillData{
       //T1
   static String AURA_SKILL_B_T1_NAME = "Morale Module";
   static String AURA_SKILL_B_T1_DESCRIPTION = "During crit mode, applies a buff that increases crit chance to nearby turrets.";
-  static float AURA_SKILL_B_T1_EXTRA_CRIT_CHANCE = 2;
+  static float AURA_SKILL_B_T1_EXTRA_CRIT_CHANCE = 3;
   
       //T2
   static String AURA_SKILL_B_T2_NAME = "Meditation";
   static String AURA_SKILL_B_T2_DESCRIPTION = "When there's no enemy in the range, charges the turret to provide extra damage for later use.";
-  static float AURA_SKILL_B_T2_MAXIMUM_BONUS_DAMAGE = 2;
-  static float AURA_SKILL_B_T2_CHARGE_RATE_PER_SEC = 1;
-  static float AURA_SKILL_B_T2_DRAIN_RATE_PER_SEC = 0.5;
+  static float AURA_SKILL_B_T2_MAXIMUM_BONUS_DAMAGE = 24;
+  static float AURA_SKILL_B_T2_CHARGE_RATE_PER_SEC = 4;
+  static float AURA_SKILL_B_T2_DRAIN_RATE_PER_SEC = 8;
   
       //T3
   static String AURA_SKILL_B_T3_NAME = "Bloodlust";
-  static String AURA_SKILL_B_T3_DESCRIPTION = "During crit mode, the duration is extended when an enemy dies in the attack range.";
-  static float AURA_SKILL_B_T3_CRIT_DURATION_EXTENSION = 0.5;
+  static String AURA_SKILL_B_T3_DESCRIPTION = "During crit mode, the duration is reset when an enemy dies in the attack range.";
   
       //T4
   static String AURA_SKILL_B_T4_NAME = "Repellant";
   static String AURA_SKILL_B_T4_DESCRIPTION = "Applies a debuff that nullifies all the buffs and keeps the armor from regenerating.";
-  static float AURA_SKILL_B_T4_DURATION = 300;
+  static float AURA_SKILL_B_T4_DURATION = 900;
   
       //T5
-  static String AURA_SKILL_B_T5_NAME = "Jinx";
+  static String AURA_SKILL_B_T5_NAME = "Curse";
   static String AURA_SKILL_B_T5_DESCRIPTION = "Applies a debuff that instantly kills the carrier when its health falls below the threshold.";
-  static float AURA_SKILL_B_T5_HEALTH_THRESHOLD = 0.1;
+  static float AURA_SKILL_B_T5_HEALTH_THRESHOLD = 0.10;
   static float AURA_SKILL_B_T5_DURATION = 300;
   
     //LevelC
@@ -286,29 +286,27 @@ static class TurretSkillData{
   static int AURA_SKILL_C_T1_DURATION = 15;
   
       //T2
-  static String AURA_SKILL_C_T2_NAME = "Decripify";
+  static String AURA_SKILL_C_T2_NAME = "Decrepify";
   static String AURA_SKILL_C_T2_DESCRIPTION = "Deals bonus damage based on the missing health of enemies in the attack range.";
-  static float AURA_SKILL_C_T2_BONUS_DAMAGE_PER_PERCENT_OF_MISSING_HEALTH = 0.002;
+  static float AURA_SKILL_C_T2_BONUS_DAMAGE_PER_PERCENT_OF_MISSING_HEALTH = 0.02;
   
       //T3
   static String AURA_SKILL_C_T3_NAME = "A.W.E.";
   static String AURA_SKILL_C_T3_DESCRIPTION = "When entering crit mode, releases a shockwave that slows and deals damage.";
-  static float AURA_SKILL_C_T3_MAX_RADIUS_RATIO = 1.5;
-  static float AURA_SKILL_C_T3_SHOCKWAVE_WIDTH_RATIO = 0.3;
-  static float AURA_SKILL_C_T3_SLOW_PERCENTAGE = 0.2;
-  static float AURA_SKILL_C_T3_SLOW_DURATION = 90;
-  static float AURA_SKILL_C_T3_DAMAGE_PERCENTAGE = 1;
+  static float AURA_SKILL_C_T3_MAX_RADIUS_RATIO = 2.5;
+  static float AURA_SKILL_C_T3_SHOCKWAVE_SPEED_RATIO = 0.025;
+  static float AURA_SKILL_C_T3_SLOW_PERCENTAGE = 0.3;
+  static float AURA_SKILL_C_T3_SLOW_DURATION = 60;
   
       //T4
   static String AURA_SKILL_C_T4_NAME = "Synchronize";
   static String AURA_SKILL_C_T4_DESCRIPTION = "Applies a debuff that makes the carrier feel the pain even when out of range.";
-  static float AURA_SKILL_C_T4_DAMAGE_PERCENTAGE = 1;
   static float AURA_SKILL_C_T4_DURATION = 300;
   
       //T5
   static String AURA_SKILL_C_T5_NAME = "Fatal Bond";
   static String AURA_SKILL_C_T5_DESCRIPTION = "Applies a debuff that causes the damage dealt to one of the enemies to be felt by the others.";
-  static float AURA_SKILL_C_T5_DAMAGE_SHARE_PERCENTAGE = 0.04;
+  static float AURA_SKILL_C_T5_DAMAGE_SHARE_PERCENTAGE = 0.2;
   static float AURA_SKILL_C_T5_DURATION = 300;
   
 }

@@ -4,8 +4,10 @@ class Enemy{
   final int MOVE_L = 3;
   final int MOVE_R = 4;
   
+  String enemyName;
   boolean state;
   boolean drawHurt;
+  boolean demoMode;
   boolean buffState[] = new boolean [BuffData.BUFF_COUNT];
   float buffTimer[] = new float [BuffData.BUFF_COUNT];
   float buffData1[] = new float [BuffData.BUFF_COUNT];
@@ -16,27 +18,35 @@ class Enemy{
   float health;
   float maxArmor;
   float armor;
+  float armorRegenRate;
+  int armorRegenDelay;
   float power;
   float x;
   float y;
   float speed;
+  int lastHitTime;
   int maimTime;
   int ID;
   int type;
   color enemyColor;
   int OnGrid, OnGridX, OnGridY;
-  int moveDir = MOVE_R;
+  int moveDir;
   int bounty;
+  float buffRange;
+  boolean dsVisualState = false;
+  int dsTime = -1;
   
   PopupText dmgPopup = new PopupText();
   PopupText critPopup = new PopupText();
   
   void show(){
     endCheck();
-    healthCheck();
     checkBuffValidity();
     loadStat();
     applyBuffEffect();
+    healthCheck();
+    if(type == ENEMY_SUPPORT) supportBuffAura();
+    drawShadow();
     stroke(0);
     ellipseMode(CENTER);
     fill(enemyColor);
@@ -53,7 +63,86 @@ class Enemy{
       drawHurt = false;
     }
     healthBar();
+    armorRegenCheck();
     if(armor!=0) armorBar();
+    if(mouseCheck(this) && mousePressed){
+        targetEnemy = ID;
+    }
+  }
+  
+  void drawShadow(){
+    noStroke();
+    fill(0,80);
+    ellipse(x-2,y+2,size,size);
+  }
+  
+  void showInfoBox(){
+    infoIndicateUI();
+    pushMatrix();
+    pushStyle();
+    int startOffsetX = 6;
+    int startOffsetY = 2;
+    int columnHeight = 25;
+    int columnWidth = 200;
+    noStroke();
+    translate(1000,1);
+    fill(0,180);
+    rect(0,0,columnWidth,columnHeight*4);
+    textFont(font[7]);
+    textSize(17);
+    textAlign(LEFT,TOP);
+    fill(255);
+    text("Type: " + enemyName,startOffsetX,startOffsetY + columnHeight*0);
+    fill(255,0,0);
+    rect(0,columnHeight*1,columnWidth * (health/maxHealth), columnHeight);
+    fill(255);
+    text("Health: " + ceil(health),startOffsetX,startOffsetY + columnHeight*1);
+    fill(0,0,255);
+    rect(0,columnHeight*2,columnWidth * (armor/maxArmor), columnHeight);
+    fill(255);
+    text("Armor: " + ceil(armor),startOffsetX,startOffsetY + columnHeight*2);
+    text("Speed: " + float(round(speed*100))/100,startOffsetX,startOffsetY + columnHeight*3);
+    textAlign(CENTER,TOP);
+    float showBuffCount = 0;
+    for(int i = 0; i < buffState.length; i++){
+      if(buffState[i]){
+        fill(0,180);
+        rect(0,columnHeight*4+showBuffCount*columnHeight,columnWidth,columnHeight);
+        if(BuffData.BUFF_TYPE[i] == BUFF){
+          fill(0,0,255);
+        }else{
+          fill(255,0,0);
+        }
+        rect(0,columnHeight*4+showBuffCount*columnHeight,columnWidth*(buffTimer[i]-realFrameCount)/BuffData.BUFF_DURATION[i],columnHeight);
+        fill(255);
+        text(BuffData.BUFF_NAME[i],columnWidth/2,startOffsetY+(showBuffCount+4)*columnHeight);
+        showBuffCount++;
+      }
+    }
+    popStyle();
+    popMatrix();
+  }
+  
+  void infoIndicateUI(){
+    pushStyle();
+    float m = 30 + 8*sin(frameCount/(PI*4));
+    tint(255,0,0);
+    image(targetArrow, x, y - m, 30, 45);
+    popStyle();
+  }
+  
+  void demoShow(){
+    if(type == ENEMY_SUPPORT) supportBuffAura();
+    ellipseMode(CENTER);
+    drawShadow();
+    stroke(0);
+    fill(enemyColor);
+    ellipse(x,y,size,size);
+    if(drawHurt){
+      fill(255,255,255,200);
+      ellipse(x,y,size,size);
+      drawHurt = false;
+    }
   }
   
   void popShow(){
@@ -62,31 +151,39 @@ class Enemy{
   }
   
   void healthBar(){
-    pushStyle();
-    textAlign(CENTER,CENTER);
-    fill(255);
-    textFont(font[3]);
-    text(floor(health),x,y-6);
-    popStyle();
+    //pushStyle();
+    //textAlign(CENTER,CENTER);
+    //fill(255);
+    //textFont(font[3]);
+    //text(ceil(health),x,y-6);
+    //popStyle();
     stroke(0);
-    fill(255,0,0);
+    fill(0,60);
     rect(x-20,y-20,40,4);
     fill(0,255,0);
     rect(x-20,y-20,40*(health/maxHealth),4);
   }
   
   void armorBar(){
-    pushStyle();
-    textAlign(CENTER,CENTER);
-    fill(100,100,255);
-    textFont(font[3]);
-    text(floor(armor),x,y+10);
-    popStyle();
+    //pushStyle();
+    //textAlign(CENTER,CENTER);
+    //fill(100,100,255);
+    //textFont(font[3]);
+    //text(ceil(armor),x,y+10);
+    //popStyle();
     stroke(0);
-    fill(255,0,0);
+    fill(0,60);
     rect(x-20,y-25,40,4);
     fill(0,0,255);
     rect(x-20,y-25,40*(armor/maxArmor),4);
+  }
+  
+  void armorRegenCheck(){
+    int delayTime = armorRegenDelay;
+    if(buffState[17]) lastHitTime++;
+    if(lastHitTime + delayTime < realFrameCount && armor < maxArmor){
+      armor += (maxArmor-armor)*armorRegenRate;
+    }
   }
   
   void critPop(){
@@ -112,28 +209,28 @@ class Enemy{
     OnGridX = floor(x/gridSize);
     OnGridY = floor(y/gridSize);
     if(OnGrid != lastGrid && OnGrid >= 0){
-      if(moveDir == MOVE_R && x >= OnGridX*gridSize + 30 && routeGrid[OnGrid+10] == false){
+      if(moveDir == MOVE_R && x >= OnGridX*gridSize + 30 && (OnGrid + 10 > routeGrid.length || !routeGrid[OnGrid+10])){
         if(!routeGrid[OnGrid+1]){
           moveDir = MOVE_U;
         }else{
           moveDir = MOVE_D;
         }
       }
-      if(moveDir == MOVE_U && y <= OnGridY*gridSize + 30 && routeGrid[OnGrid-1] == false){
+      if(moveDir == MOVE_U && y <= OnGridY*gridSize + 30 && (OnGrid - 1 < 0 || !routeGrid[OnGrid-1])){
         if(!routeGrid[OnGrid+10]){
           moveDir = MOVE_L;
         }else{
           moveDir = MOVE_R;
         }
       }
-      if(moveDir == MOVE_L && x <= OnGridX*gridSize + 30 && routeGrid[OnGrid-10] == false){
+      if(moveDir == MOVE_L && x <= OnGridX*gridSize + 30 && (OnGrid - 10 < 0 || !routeGrid[OnGrid-10])){
         if(!routeGrid[OnGrid+1]){
           moveDir = MOVE_U;
         }else{
           moveDir = MOVE_D;
         }
       }
-      if(moveDir == MOVE_D && y >= OnGridY*gridSize + 30 && routeGrid[OnGrid+1] == false){
+      if(moveDir == MOVE_D && y >= OnGridY*gridSize + 30 && (OnGrid + 1 > routeGrid.length || !routeGrid[OnGrid+1])){
         if(!routeGrid[OnGrid+10]){
           moveDir = MOVE_L;
         }else{
@@ -146,6 +243,7 @@ class Enemy{
   void healthCheck(){
     if(health <= 0){
       if(buffState[7]) volatileEffect();
+      if(buffState[11]) bloodlustEffect();
       init();
       addGold(bounty);
     }
@@ -160,17 +258,33 @@ class Enemy{
   }
   
   void hurt(float damage){
+    lastHitTime = realFrameCount;
     damage *= damageMultiplier();
     health -= damage;
-    dmgPopup = new PopupText("" + float(round(damage*10))/10, x, y-10, 1, 22, TEXT_NOMOVE);
+    if(buffState[16]) fatalEffect(damage);
+    damagePop(damage);
+    //println(ID + " / " + damage);
+    drawHurt = true;
+  }
+  
+  void fatalHurt(float damage){
+    lastHitTime = realFrameCount;
+    damage *= damageMultiplier();
+    health -= damage;
+    damagePop(damage);
     //println(ID + " / " + damage);
     drawHurt = true;
   }
   
   void hurtArmor(float damage){
+    lastHitTime = realFrameCount;
     damage *= armorDamageMultiplier();
     armor -= damage;
     armor = max(0,armor);
+  }
+  
+  void damagePop(float damage){
+    dmgPopup = new PopupText("" + float(round(damage*10))/10, x, y-10, 1, 22, TEXT_NOMOVE);
   }
   
   void applyBuffEffect(){
@@ -182,11 +296,27 @@ class Enemy{
     
     // Size
     size += sizeAddition();
+    size = min(size,58);
+    
+    //Armor
+    
+    armorRegenRate *= armorRegenMultiplier();
+    armorRegenDelay *= armorRegenDelayMultiplier();
     
     // Group: Others
     if(buffState[2]) ionicEffect();
-    if(buffState[7]) debuffIndicate(x,y,TurretSkillData.LASER_SKILL_C_T4_RADIUS,20,(buffTimer[7]-realFrameCount),TurretSkillData.LASER_SKILL_C_T4_DURATION);
+    //if(buffState[7]) debuffIndicate(x,y,TurretSkillData.LASER_SKILL_C_T4_RADIUS,20,(buffTimer[7]-realFrameCount),TurretSkillData.LASER_SKILL_C_T4_DURATION);
     if(buffState[10]) cancerEffect();
+    if(buffState[12]) jinxEffect();
+    //if(buffState[15]){
+    //  debuffIndicate(x,y,100,100,(buffTimer[15]-realFrameCount),TurretSkillData.AURA_SKILL_C_T4_DURATION);
+    //}
+    //if(buffState[17]){
+    //  debuffIndicate(x,y,100,100,(buffTimer[17]-realFrameCount),TurretSkillData.AURA_SKILL_B_T4_DURATION);
+    //}
+    if(buffState[20] && !buffState[17] && health < maxHealth){
+      health += (maxHealth - health) * EnemyData.BUFF_HEALTH_REGEN_RATE;
+    }
   }
   
   void checkBuffValidity(){
@@ -233,7 +363,7 @@ class Enemy{
         if(buffData1[ID] == 0) buffData1[ID] = realFrameCount;
         break;
       case 10:
-        buffData1[ID] += data;
+        if(buffData1[ID] < TurretSkillData.AURA_SKILL_A_T5_STACK_CAP) buffData1[ID] += data;
         break;
       default:
         buffData1[ID] = data;
@@ -260,7 +390,26 @@ class Enemy{
     float multiplier = 1;
     if(buffState[0]){
       multiplier += TurretSkillData.CANNON_SKILL_A_T3_ARMOR_DAMAGE_MULTIPLIER;
-      debuffIndicate(x,y,40,20);
+      //debuffIndicate(x,y,40,20);
+    }
+    if(buffState[18] && !buffState[17]){
+      multiplier -= EnemyData.BUFF_FORTIFIED_MULTIPLIER;
+    }
+    return multiplier;
+  }
+  
+  float armorRegenMultiplier(){
+    float multiplier = 1;
+    if(buffState[22] && !buffState[17]){
+      multiplier += EnemyData.BUFF_WEAVE_MULTIPLIER;
+    }
+    return multiplier;
+  }
+  
+  float armorRegenDelayMultiplier(){
+    float multiplier = 1;
+    if(buffState[22] && !buffState[17]){
+      multiplier -= EnemyData.BUFF_WEAVE_DELAY_REDUCTION;
     }
     return multiplier;
   }
@@ -270,6 +419,9 @@ class Enemy{
     if(buffState[4]){
       multiplier += TurretSkillData.LASER_SKILL_B_T3_EXTRA_DAMAGE_MULTIPLER * (buffData2[4]/TurretSkillData.LASER_SKILL_B_T3_MAX_INFLATION_AMOUNT);
     }
+    if(buffState[21] && !buffState[17]){
+      multiplier -= EnemyData.BUFF_TOUGH_SKIN_MULTIPLIER;
+    }
     return multiplier;
   }
   
@@ -277,22 +429,33 @@ class Enemy{
     float multiplier = 1;
     if(buffState[1]){
       multiplier -= TurretSkillData.CANNON_SKILL_C_T1_SLOW_PERCENTAGE;
-      debuffIndicate(x,y,100,50,(buffTimer[1]-realFrameCount),TurretSkillData.CANNON_SKILL_C_T1_DURATION);
+      //debuffIndicate(x,y,100,50,(buffTimer[1]-realFrameCount),TurretSkillData.CANNON_SKILL_C_T1_DURATION);
     }
     if(buffState[3]){
       multiplier -= max(TurretSkillData.CANNON_SKILL_C_T5_MIN_SLOW_PERCENTAGE,pow((TurretSkillData.CANNON_SKILL_C_T5_SLOW_PERCENTAGE),maimTime));
-      debuffIndicate(x,y,100,100,(buffTimer[3]-realFrameCount),TurretSkillData.CANNON_SKILL_C_T5_DURATION);
+      //debuffIndicate(x,y,100,100,(buffTimer[3]-realFrameCount),TurretSkillData.CANNON_SKILL_C_T5_DURATION);
     }
     if(buffState[5]){
       multiplier -= TurretSkillData.LASER_SKILL_C_T2_SLOW_PERCENTAGE;
-      debuffIndicate(x,y,100,100,(buffTimer[5]-realFrameCount),TurretSkillData.LASER_SKILL_C_T2_DURATION);
+      //debuffIndicate(x,y,100,100,(buffTimer[5]-realFrameCount),TurretSkillData.LASER_SKILL_C_T2_DURATION);
     }
     if(buffState[6]){
       multiplier -= map(health,maxHealth,0,0,TurretSkillData.LASER_SKILL_C_T5_MAXIMUM_SLOW_PERCENTAGE);
-      debuffIndicate(x,y,100,100,(buffTimer[6]-realFrameCount),TurretSkillData.LASER_SKILL_C_T5_DURATION);
+      //debuffIndicate(x,y,100,100,(buffTimer[6]-realFrameCount),TurretSkillData.LASER_SKILL_C_T5_DURATION);
+    }
+    if(buffState[13]){
+      multiplier -= TurretSkillData.AURA_SKILL_C_T1_SLOW_PERCENTAGE;
+      //debuffIndicate(x,y,100,100,(buffTimer[13]-realFrameCount),TurretSkillData.AURA_SKILL_C_T1_DURATION);
+    }
+    if(buffState[14]){
+      multiplier -= TurretSkillData.AURA_SKILL_C_T3_SLOW_PERCENTAGE;
+      //debuffIndicate(x,y,100,100,(buffTimer[14]-realFrameCount),TurretSkillData.AURA_SKILL_C_T3_SLOW_DURATION);
+    }
+    if(buffState[19] && !buffState[17]){
+      multiplier += EnemyData.BUFF_HASTE_MULTIPLIER;
     }
     //println(multiplier);
-    return constrain(multiplier,0,1);
+    return constrain(multiplier,0,10);
   }
   
   float sizeAddition(){
@@ -314,7 +477,7 @@ class Enemy{
         }
       }
     }
-    debuffIndicate(x,y,TurretSkillData.CANNON_SKILL_C_T2_RADIUS*2,20*min(buffData2[2],6),(buffTimer[2]-realFrameCount),TurretSkillData.CANNON_SKILL_C_T2_DURATION);
+    //debuffIndicate(x,y,TurretSkillData.CANNON_SKILL_C_T2_RADIUS*2,20*min(buffData2[2],6),(buffTimer[2]-realFrameCount),TurretSkillData.CANNON_SKILL_C_T2_DURATION);
   }
   
   void volatileEffect(){
@@ -324,59 +487,126 @@ class Enemy{
           enemy[i].hurt(calDamage(i, dmg));
       }
     }
-    debuffIndicate(x,y,TurretSkillData.LASER_SKILL_C_T4_RADIUS*2,120);
+    //debuffIndicate(x,y,TurretSkillData.LASER_SKILL_C_T4_RADIUS*2,120);
   }
   
   void cancerEffect(){
-    float dmg = buffData2[10] * (TurretSkillData.AURA_SKILL_A_T5_BASE_DAMAGE_PERCENTAGE * pow(2,buffData1[10]));
+    float dmg = buffData2[10] * (TurretSkillData.AURA_SKILL_A_T5_BASE_DAMAGE_PERCENTAGE * pow(2,buffData1[10]/3));
     if((buffTimer[10] - realFrameCount) % TurretSkillData.AURA_SKILL_A_T5_DAMAGE_INTERVAL == 0){
       hurt(dmg);
     }
-    debuffIndicate(x,y,70,80,(buffTimer[10]-realFrameCount),TurretSkillData.AURA_SKILL_A_T5_DURATION);
+    //debuffIndicate(x,y,70,5*buffData1[10],(buffTimer[10]-realFrameCount),TurretSkillData.AURA_SKILL_A_T5_DURATION);
+  }
+  
+  void bloodlustEffect(){
+    for(int i = 0; i < turret.length; i++){
+      if(turret[i].turretType == AURA && turret[i].skillState[1][2] && turret[i].critMode) turret[i].critDurationCounter = turret[i].critDuration;
+    }
+  }
+  
+  void jinxEffect(){
+    if(health > 0 && health < maxHealth * TurretSkillData.AURA_SKILL_B_T5_HEALTH_THRESHOLD) hurt(health*10);
+  }
+  
+  void fatalEffect(float dmg){
+    for(int i = 0; i < sentEnemy; i++){
+      if(enemy[i].buffState[16]) enemy[i].fatalHurt(dmg*TurretSkillData.AURA_SKILL_C_T5_DAMAGE_SHARE_PERCENTAGE);
+    }
+  }
+  
+  void supportBuffAura(){
+    int [] affectedIDList = new int [0];
+    for(int i = 0; i < sentEnemy; i++){
+      if(dist(x,y,enemy[i].x,enemy[i].y) - enemy[i].size <= buffRange){
+        if(i != ID) affectedIDList = splice(affectedIDList, i, affectedIDList.length);
+        enemy[i].getBuff(18,3);
+        enemy[i].getBuff(19,3);
+        enemy[i].getBuff(20,3);
+        enemy[i].getBuff(21,3);
+        enemy[i].getBuff(22,3);
+      }
+    }
+    supportDynamicSpeed(affectedIDList);
+    pushStyle();
+    noStroke();
+    fill(#0CEBF5, 40);
+    ellipse(x,y,buffRange*2,buffRange*2);
+    popStyle();
+  }
+  
+  void supportDynamicSpeed(int [] IDList){
+    float speedSum = 0;
+    for(int i = 0; i < IDList.length; i++){
+      speedSum += enemy[IDList[i]].speed;
+    }
+    speedSum /= IDList.length;
+    if(speedSum > 0) speed = speedSum;
+  }
+  
+  void drawDSVisual(){
+    int dsShowTime = 30;
+    pushStyle();
+    noStroke();
+    colorMode(HSB,360,100,100);
+    fill(realFrameCount%360,100,100, 8*(dsShowTime-(realFrameCount-dsTime)));
+    rect(x-25,y-700,50,700);
+    ellipse(x,y,80,80);
+    popStyle();
+    if(realFrameCount-dsTime == dsShowTime) dsVisualState = false;
   }
   
   void loadStat(){
     switch(type){
       case 1: //normal
+        enemyName = "NRML";
         enemyColor = EnemyData.NORMAL_COLOR;
         size = EnemyData.NORMAL_SIZE;
-        maxHealth = EnemyData.NORMAL_MAX_HEALTH;
-        power = EnemyData.NORMAL_POWER;
-        maxArmor = EnemyData.NORMAL_MAX_ARMOR;
-        speed = EnemyData.NORMAL_SPEED;
-        bounty = EnemyData.NORMAL_BOUNTY;
+        maxHealth = EnemyData.NORMAL_MAX_HEALTH[difficulty];
+        power = EnemyData.NORMAL_POWER[difficulty];
+        maxArmor = EnemyData.NORMAL_MAX_ARMOR[difficulty];
+        armorRegenRate = EnemyData.NORMAL_ARMOR_REGEN_RATE[difficulty];
+        speed = EnemyData.NORMAL_SPEED[difficulty];
+        bounty = EnemyData.NORMAL_BOUNTY[difficulty];
         break;
         
       case 2: //fast
+        enemyName = "FAST";
         enemyColor = EnemyData.FAST_COLOR;
         size = EnemyData.FAST_SIZE;
-        maxHealth = EnemyData.FAST_MAX_HEALTH;
-        power = EnemyData.FAST_POWER;
-        maxArmor = EnemyData.FAST_MAX_ARMOR;
-        speed = EnemyData.FAST_SPEED;
-        bounty = EnemyData.FAST_BOUNTY;
+        maxHealth = EnemyData.FAST_MAX_HEALTH[difficulty];
+        power = EnemyData.FAST_POWER[difficulty];
+        maxArmor = EnemyData.FAST_MAX_ARMOR[difficulty];
+        armorRegenRate = EnemyData.FAST_ARMOR_REGEN_RATE[difficulty];
+        speed = EnemyData.FAST_SPEED[difficulty];
+        bounty = EnemyData.FAST_BOUNTY[difficulty];
         break;
         
       case 3: //tank
+        enemyName = "TANK";
         enemyColor = EnemyData.TANK_COLOR;
         size = EnemyData.TANK_SIZE;
-        maxHealth = EnemyData.TANK_MAX_HEALTH;
-        power = EnemyData.TANK_POWER;
-        maxArmor = EnemyData.TANK_MAX_ARMOR;
-        speed = EnemyData.TANK_SPEED;
-        bounty = EnemyData.TANK_BOUNTY;
+        maxHealth = EnemyData.TANK_MAX_HEALTH[difficulty];
+        power = EnemyData.TANK_POWER[difficulty];
+        maxArmor = EnemyData.TANK_MAX_ARMOR[difficulty];
+        armorRegenRate = EnemyData.TANK_ARMOR_REGEN_RATE[difficulty];
+        speed = EnemyData.TANK_SPEED[difficulty];
+        bounty = EnemyData.TANK_BOUNTY[difficulty];
         break;
         
       case 4: //support
+        enemyName = "SPRT";
         enemyColor = EnemyData.SUPPORT_COLOR;
         size = EnemyData.SUPPORT_SIZE;
-        maxHealth = EnemyData.SUPPORT_MAX_HEALTH;
-        power = EnemyData.SUPPORT_POWER;
-        maxArmor = EnemyData.SUPPORT_MAX_ARMOR;
-        speed = EnemyData.SUPPORT_SPEED;
-        bounty = EnemyData.SUPPORT_BOUNTY;
+        maxHealth = EnemyData.SUPPORT_MAX_HEALTH[difficulty];
+        power = EnemyData.SUPPORT_POWER[difficulty];
+        maxArmor = EnemyData.SUPPORT_MAX_ARMOR[difficulty];
+        armorRegenRate = EnemyData.SUPPORT_ARMOR_REGEN_RATE[difficulty];
+        speed = EnemyData.SUPPORT_SPEED[difficulty];
+        bounty = EnemyData.SUPPORT_BOUNTY[difficulty];
+        buffRange = EnemyData.SUPPORT_BUFF_RANGE[difficulty];
         break;
     }
+    armorRegenDelay = EnemyData.ARMOR_REGEN_DELAY[difficulty];
     maxHealth += enemyMaxHealthGrowth(type);
     maxArmor += enemyArmorGrowth(type);
     speed += enemySpeedGrowth(type);
@@ -405,8 +635,23 @@ class Enemy{
     armor = maxArmor;
     drawHurt = false;
     state = true;
-    
+    demoMode = false;
+    moveDir = MOVE_R;
     this.x = startpointX;
     this.y = startpointY;
+  }
+  
+  Enemy(int enemyType, int ID, boolean demo){
+    this.ID = ID;
+    type = enemyType;
+    demoMode = demo;
+    loadStat();
+    health = maxHealth;
+    armor = maxArmor;
+    drawHurt = false;
+    state = true;
+    moveDir = MOVE_R;
+    x = ID * gridSize + 30;
+    y = 30;
   }
 }
