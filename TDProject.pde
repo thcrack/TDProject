@@ -60,7 +60,6 @@ int UIMode;
 int previousMode;
 int gold;
 int [] startGold = {150,100,100};
-int [] laserDeathstarEffectList = {-1};
 int realFrameCount;
 int endFrame;
 int gameSpeed;
@@ -282,8 +281,8 @@ void drawGameplay(){
     
     for(int i = 0; i < gridCount; i++){ // Scan through each grid because the data of turrets is bound to it
       if(turret[i].builtState){ // Check if there is a turret on the grid
-        turret[i].show();
         turret[i].detect();
+        turret[i].show();
       }
     }
     
@@ -613,9 +612,9 @@ float armorAbsorb(int turretID, float inputDmg, int targetID, float inputArmor){
   float multiplier = 1;
   if(inputArmor>0){
     if(turretID == -1){
-      multiplier *= EnemyData.ARMOR_ABSORB_RATIO;
+      multiplier *= EnemyData.ARMOR_ABSORB_RATIO[difficulty];
     }else{
-      multiplier *= armorBypass(turretID, EnemyData.ARMOR_ABSORB_RATIO);
+      multiplier *= armorBypass(turretID, EnemyData.ARMOR_ABSORB_RATIO[difficulty]);
     }
     enemy[targetID].hurtArmor(inputDmg*multiplier);
     return inputDmg*multiplier;
@@ -1045,7 +1044,7 @@ void drawGrids(){
 void rangeIndicate(){
   stroke(255);
   noFill();
-  ellipse(turret[targetTurretID].x, turret[targetTurretID].y,turret[targetTurretID].attackRange*2,turret[targetTurretID].attackRange*2);
+  ellipse(turret[targetTurretID].x, turret[targetTurretID].y-turret[targetTurretID].levelC/2,turret[targetTurretID].attackRange*2,turret[targetTurretID].attackRange*2);
 }
 
 void enoughGoldIndicate(){
@@ -1080,7 +1079,6 @@ void gameInit(){ // Game initialization
   for(int i = 1; i < popupTextArray.length; i++){
     popupTextArray[i] = new PopupText();
   }
-  laserDeathstarEffectList = new int [] {-1};
 }
 
 void waveEnd(){ 
@@ -1257,6 +1255,14 @@ void keyPressed(){
   if(key == CODED && keyCode == SHIFT){
     shiftMode = true;
   }
+  if(key == ' '){
+    if(!assaultMode){
+      assaultMode = true;
+      sentEnemy = 1;
+    }else{
+      gameSpeedCycle();
+    }
+  }
 }
 
 
@@ -1271,28 +1277,17 @@ void keyReleased(){
       case SHIFT:
         shiftMode = false;
         break;
-      case LEFT:
-        if(assaultMode && targetEnemy < currentWaveMaxEnemy-1){
-          targetEnemy ++;
-          while(targetEnemy < currentWaveMaxEnemy && !enemy[targetEnemy].state){
-            targetEnemy ++;
-          }
+      case UP:
+        baseHealth = 100;
+        break;
+      case DOWN:
+        for(int i = 0; i < sentEnemy; i++){
+          if(enemy[i].state) enemy[i].hurt(9999999);
         }
         break;
       case RIGHT:
-        if(assaultMode && targetEnemy > 0){
-          targetEnemy --;
-          while(targetEnemy > 0 && !enemy[targetEnemy].state){
-            targetEnemy --;
-          }
-        }else if(assaultMode && targetEnemy == -1){
-          targetEnemy ++;
-          while(targetEnemy < currentWaveMaxEnemy && !enemy[targetEnemy].state){
-            targetEnemy ++;
-          }
-        }
+        waveEnd();
         break;
-
       default:
         addGold(1000);
     }
@@ -1507,13 +1502,7 @@ void mouseReleased(){
 
 void universalUICheck(){
   if(assaultMode && mouseCheck(gameSpeedChange.x,gameSpeedChange.y,gameSpeedChange.w,gameSpeedChange.h)){
-    if(gameSpeed == 1){
-      gameSpeed = 2;
-    }else if(gameSpeed == 2){
-      gameSpeed = 4;
-    }else if(gameSpeed == 4){
-      gameSpeed = 1;
-    }
+    gameSpeedCycle();
   }
   if(!assaultMode && mouseCheck(nextWave.x,nextWave.y,nextWave.w,nextWave.h)){
     assaultMode = true;
@@ -1521,6 +1510,16 @@ void universalUICheck(){
   }
   if(mouseCheck(pause.x,pause.y,pause.w,pause.h)){
     pauseState = true;
+  }
+}
+
+void gameSpeedCycle(){
+  if(gameSpeed == 1){
+    gameSpeed = 2;
+  }else if(gameSpeed == 2){
+    gameSpeed = 4;
+  }else if(gameSpeed == 4){
+    gameSpeed = 1;
   }
 }
 

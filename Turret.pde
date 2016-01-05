@@ -63,6 +63,8 @@ class Turret{
     }else if(turretType == LASER){
       laserHeat -= 3;
       laserHeat = constrain(laserHeat,0,laserOverheatThreshold);
+    }else if(turretType == AURA && cooldown && skillState[2][3] && auraCheckSync()){
+      attack();
     }
     if(!cooldown){
       if(turretType == LASER){
@@ -448,15 +450,16 @@ class Turret{
   void detect(){
     float targetDist = 1500;
     if(target==-1){
+      skillFervorReset();
       for(int i = 0; i < sentEnemy; i++){
         float distance = dist(x, y, enemy[i].x, enemy[i].y);
-        if( ( distance  - enemy[i].size/2 <= attackRange && distance < targetDist ) || ( turretType == AURA && skillState[2][3] && enemy[i].buffState[15] )){
-          targetDist = dist(x, y, enemy[i].x, enemy[i].y);
+        if( ( distance  - enemy[i].size/2 <= attackRange && distance < targetDist )){
+          targetDist = distance;
           target = i;
         }
       }
     }
-    if(target != -1 && dist(x, y, enemy[target].x, enemy[target].y) - enemy[target].size/2 > attackRange  && !( turretType == AURA && skillState[2][3] && enemy[target].buffState[15] )){
+    if(target != -1 && dist(x, y, enemy[target].x, enemy[target].y) - enemy[target].size/2 > attackRange){
       target = -1;
       skillFervorReset();
     }
@@ -527,12 +530,14 @@ class Turret{
         if(skillState[1][4]) laserPiercePenaltyMultiplier = TurretSkillData.LASER_SKILL_B_T5_PENETRATION_AMP;
         laserPierceDamageProcess(laserPierceID);
         laserHeat++;
-        if(laserHeat == laserOverheatThreshold){
+        if(laserHeat >= laserOverheatThreshold){
           if(!skillState[1][1] || !critMode){
             laserHeat = 0;
             cooldown = false;
             if(skillState[1][0]) attackRate = laserOverdriveProcess(attackRate);
             cooldownTime = attackRate;
+          }else{
+            laserHeat = laserOverheatThreshold - 1;
           }
         }
         popStyle();
@@ -763,7 +768,7 @@ class Turret{
     float deathstarDamage;
     deathstarDamage = attackDmg * TurretSkillData.LASER_SKILL_A_T5_BONUS_DAMAGE_MULTIPLIER;
     if(laserDeathstarTime == 0) laserDeathstarTime = realFrameCount;
-    if((realFrameCount-laserDeathstarTime)%TurretSkillData.LASER_SKILL_A_T5_DAMAGE_INTERVAL == 0){
+    if((realFrameCount-laserDeathstarTime)%TurretSkillData.LASER_SKILL_A_T5_DAMAGE_INTERVAL == 0 && idList.length != 0){
       deathstarTarget = idList[floor(random(0,idList.length-1))];
       if(deathstarTarget != -1){
         //laserDeathstarEffectList = splice(laserDeathstarEffectList,deathstarTarget,laserDeathstarEffectList.length);
@@ -800,8 +805,8 @@ class Turret{
   
   void auraOrbDetect(int [] IDList){
     for(int i = 0; i < auraOrbTarget.length; i++){
-      if(auraOrbTarget[i] == -1){
-        auraOrbTarget[i] = IDList[floor(random(IDList.length))];
+      if(auraOrbTarget[i] == -1 && IDList.length != 0){
+        auraOrbTarget[i] = IDList[floor(random(0,IDList.length))];
       }
     }
   }
@@ -861,6 +866,15 @@ class Turret{
   void auraShockwaveInit(){
     auraShockwaveRadius = 0;
     auraShockwaveState = false;
+  }
+  
+  boolean auraCheckSync(){
+    for(int i = 0; i < sentEnemy; i++){
+      if(enemy[i].buffState[15]){
+        return true;
+      }
+    }
+    return false;
   }
   
   void turretInit(int type){

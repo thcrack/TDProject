@@ -3,7 +3,7 @@ static class EnemyData{
   //Global Attributes
   
   static float MIN_SPEED = 0.05;
-  static float ARMOR_ABSORB_RATIO = 0.75;
+  static float [] ARMOR_ABSORB_RATIO = {0.5,0.6,0.8};
   static int [] ARMOR_REGEN_DELAY = {600,300,180};
   
   static float BUFF_FORTIFIED_MULTIPLIER = 0.3;
@@ -18,15 +18,15 @@ static class EnemyData{
   static color NORMAL_COLOR = #FF0000;
   static float NORMAL_SIZE = 35;
   static float [] NORMAL_MAX_HEALTH = {150,200,300};
-  static float [] NORMAL_POWER = {10,10,40};
+  static float [] NORMAL_POWER = {10,10,20};
   static float [] NORMAL_MAX_ARMOR = {25,50,100};
   static float [] NORMAL_ARMOR_REGEN_RATE = {0,0.002,0.005};
   static float [] NORMAL_SPEED = {0.8,1.0,1.5};
-  static int [] NORMAL_BOUNTY = {3,3,2};
-  static float [] NORMAL_HEALTH_GROWTH = {150,200,300};
-  static float [] NORMAL_ARMOR_GROWTH = {15,20,30};
+  static int [] NORMAL_BOUNTY = {5,4,3};
+  static float [] NORMAL_HEALTH_GROWTH = {200,300,400};
+  static float [] NORMAL_ARMOR_GROWTH = {30,40,60};
   static float [] NORMAL_SPEED_GROWTH = {0.02,0.03,0.04};
-  static float [] NORMAL_BOUNTY_GROWTH = {0.6,0.5,0.4};
+  static float [] NORMAL_BOUNTY_GROWTH = {0.25,0.15,0.15};
   
   //Fast
   
@@ -37,11 +37,11 @@ static class EnemyData{
   static float [] FAST_MAX_ARMOR = {15,25,100};
   static float [] FAST_ARMOR_REGEN_RATE = {0,0.008,0.1};
   static float [] FAST_SPEED = {1.2,1.5,1.8};
-  static int [] FAST_BOUNTY = {3,2,2};
-  static float [] FAST_HEALTH_GROWTH = {80,120,200};
-  static float [] FAST_ARMOR_GROWTH = {10,20,40};
+  static int [] FAST_BOUNTY = {4,3,3};
+  static float [] FAST_HEALTH_GROWTH = {120,180,270};
+  static float [] FAST_ARMOR_GROWTH = {20,40,80};
   static float [] FAST_SPEED_GROWTH = {0.03,0.04,0.06};
-  static float [] FAST_BOUNTY_GROWTH = {0.3,0.25,0.2};
+  static float [] FAST_BOUNTY_GROWTH = {0.2,0.12,0.12};
   
   //Tank
   
@@ -52,11 +52,11 @@ static class EnemyData{
   static float [] TANK_MAX_ARMOR = {200,600,1200};
   static float [] TANK_ARMOR_REGEN_RATE = {0,0.001,0.003};
   static float [] TANK_SPEED = {0.5,0.6,0.9};
-  static int [] TANK_BOUNTY = {60,40,30};
-  static float [] TANK_HEALTH_GROWTH = {2000,3000,4000};
+  static int [] TANK_BOUNTY = {80,60,40};
+  static float [] TANK_HEALTH_GROWTH = {3000,4000,5000};
   static float [] TANK_ARMOR_GROWTH = {350,500,750};
   static float [] TANK_SPEED_GROWTH = {0.02,0.02,0.03};
-  static float [] TANK_BOUNTY_GROWTH = {4,4,3};
+  static float [] TANK_BOUNTY_GROWTH = {2,2,1};
   
   //Support
   
@@ -67,11 +67,11 @@ static class EnemyData{
   static float [] SUPPORT_MAX_ARMOR = {10,20,100};
   static float [] SUPPORT_ARMOR_REGEN_RATE = {0,0,0.002};
   static float [] SUPPORT_SPEED = {1,1.2,1.5};
-  static int [] SUPPORT_BOUNTY = {20,10,10};
+  static int [] SUPPORT_BOUNTY = {10,5,5};
   static float [] SUPPORT_BUFF_RANGE = {100,175,250};
-  static float [] SUPPORT_HEALTH_GROWTH = {100,150,250};
+  static float [] SUPPORT_HEALTH_GROWTH = {200,300,400};
   static float [] SUPPORT_ARMOR_GROWTH = {3,5,15};
   static float [] SUPPORT_SPEED_GROWTH = {0.02,0.03,0.05};
-  static float [] SUPPORT_BOUNTY_GROWTH = {3,2,2};
+  static float [] SUPPORT_BOUNTY_GROWTH = {1,0.5,0.5};
 
 }

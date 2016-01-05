@@ -37,7 +37,7 @@ static class TurretSkillData{
       //T5
   static String CANNON_SKILL_A_T5_NAME = "Saboteur";
   static String CANNON_SKILL_A_T5_DESCRIPTION = "Deals additional damage based on target’s current health.";
-  static float CANNON_SKILL_A_T5_HP_PERCENTAGE = 0.004;
+  static float CANNON_SKILL_A_T5_HP_PERCENTAGE = 0.001;
   
   
     //LevelB
@@ -56,18 +56,18 @@ static class TurretSkillData{
   static String CANNON_SKILL_B_T3_NAME = "Fervor";
   static String CANNON_SKILL_B_T3_DESCRIPTION = "Each continuous attack on the same target stacks fire rate; loses all on changing target.";
   static float CANNON_SKILL_B_T3_BONUS_FIRE_RATE_MULTIPLIER_PER_STACK = 0.15;
-  static int CANNON_SKILL_B_T3_MAX_STACK = 15;
+  static int CANNON_SKILL_B_T3_MAX_STACK = 10;
   
       //T4
   static String CANNON_SKILL_B_T4_NAME = "Bore";
   static String CANNON_SKILL_B_T4_DESCRIPTION = "Greatly increases the chance of critical hits.";
-  static float CANNON_SKILL_B_T4_BONUS_CRIT_CHANCE = 0.15;
+  static float CANNON_SKILL_B_T4_BONUS_CRIT_CHANCE = 0.08;
   
       //T5
   static String CANNON_SKILL_B_T5_NAME = "Death Wish";
-  static String CANNON_SKILL_B_T5_DESCRIPTION = "Increases the chance of critical hits based on the missing health of the castle.";
-  static float CANNON_SKILL_B_T5_MIN_BONUS_CRIT_CHANCE = 0.05;
-  static float CANNON_SKILL_B_T5_MAX_BONUS_CRIT_CHANCE = 0.30;
+  static String CANNON_SKILL_B_T5_DESCRIPTION = "Increases the chance of critical hits based on the missing health of the base.";
+  static float CANNON_SKILL_B_T5_MIN_BONUS_CRIT_CHANCE = 0.04;
+  static float CANNON_SKILL_B_T5_MAX_BONUS_CRIT_CHANCE = 0.16;
   
     //LevelC
     
@@ -82,26 +82,26 @@ static class TurretSkillData{
   static String CANNON_SKILL_C_T2_DESCRIPTION = "Applies a damaging aura on the target, hurting the enemies around the carrier but not itself.";
   static float CANNON_SKILL_C_T2_BASE_CANNON_DAMAGE_PERCENTAGE = 0.01;
   static float CANNON_SKILL_C_T2_RADIUS = 180;
-  static float CANNON_SKILL_C_T2_DAMAGE_INTERVAL = 3;
+  static float CANNON_SKILL_C_T2_DAMAGE_INTERVAL = 6;
   static float CANNON_SKILL_C_T2_DURATION = 240;
   
       //T3
   static String CANNON_SKILL_C_T3_NAME = "Boombastics";
   static String CANNON_SKILL_C_T3_DESCRIPTION = "Cannons explode on impact.";
   static float CANNON_SKILL_C_T3_EXPLOSION_RADIUS = 80;
-  static float CANNON_SKILL_C_T3_EXPLOSION_DAMAGE_MULTIPLIER = 0.8;
+  static float CANNON_SKILL_C_T3_EXPLOSION_DAMAGE_MULTIPLIER = 0.6;
   
       //T4   
   static String CANNON_SKILL_C_T4_NAME = "Eagle Sight";
   static String CANNON_SKILL_C_T4_DESCRIPTION = "Greatly increases the attack range of the turret.";
-  static float CANNON_SKILL_C_T4_ATTACK_RANGE_MULTIPLIER = 0.5;
+  static float CANNON_SKILL_C_T4_ATTACK_RANGE_MULTIPLIER = 0.3;
   
       //T5
   static String CANNON_SKILL_C_T5_NAME = "M.A.I.M.";
   static String CANNON_SKILL_C_T5_DESCRIPTION = "Cripples the victim on crit; the slow becomes weaker after each trigger.";
-  static float CANNON_SKILL_C_T5_SLOW_PERCENTAGE = 0.6;
+  static float CANNON_SKILL_C_T5_SLOW_PERCENTAGE = 0.4;
   static float CANNON_SKILL_C_T5_MIN_SLOW_PERCENTAGE = 0.1;
-  static float CANNON_SKILL_C_T5_DURATION = 30;
+  static float CANNON_SKILL_C_T5_DURATION = 60;
   
   //Laser
   
@@ -139,7 +139,7 @@ static class TurretSkillData{
       //T5
   static String LASER_SKILL_A_T5_NAME = "DEATHSTAR";
   static String LASER_SKILL_A_T5_DESCRIPTION = "Calls a ray from above, damaging a random victim caught by the laser.";
-  static float LASER_SKILL_A_T5_DAMAGE_INTERVAL = 12;
+  static float LASER_SKILL_A_T5_DAMAGE_INTERVAL = 15;
   static float LASER_SKILL_A_T5_BONUS_DAMAGE_MULTIPLIER = 60;
   
   
@@ -186,13 +186,13 @@ static class TurretSkillData{
   static String LASER_SKILL_C_T2_NAME = "Imflammation";
   static String LASER_SKILL_C_T2_DESCRIPTION = "Applies a debuff that slows enemies.";
   static float LASER_SKILL_C_T2_SLOW_PERCENTAGE = 0.15;
-  static float LASER_SKILL_C_T2_DURATION = 3;
+  static float LASER_SKILL_C_T2_DURATION = 15;
   
       //T3
   static String LASER_SKILL_C_T3_NAME = "Pitchfork";
   static String LASER_SKILL_C_T3_DESCRIPTION = "Creates two additional lasers that deals less damage; lasers cannot share the same target.";
   static float LASER_SKILL_C_T3_MINI_BEAM_COUNT = 2;
-  static float LASER_SKILL_C_T3_MINI_BEAM_DAMAGE_MULTIPLIER = 0.6;
+  static float LASER_SKILL_C_T3_MINI_BEAM_DAMAGE_MULTIPLIER = 0.8;
   
       //T4
   static String LASER_SKILL_C_T4_NAME = "Volatile Compound";
@@ -205,7 +205,7 @@ static class TurretSkillData{
   static String LASER_SKILL_C_T5_NAME = "Breach";
   static String LASER_SKILL_C_T5_DESCRIPTION = "Applies a debuff that slows enemies based on their missing health.";
   static float LASER_SKILL_C_T5_MAXIMUM_SLOW_PERCENTAGE = 0.20;
-  static float LASER_SKILL_C_T5_DURATION = 3;
+  static float LASER_SKILL_C_T5_DURATION = 15;
   
   //Aura
   
@@ -220,7 +220,7 @@ static class TurretSkillData{
       //T1
   static String AURA_SKILL_A_T1_NAME = "Courage Module";
   static String AURA_SKILL_A_T1_DESCRIPTION = "Applies a buff that increases damage to nearby turrets.";
-  static float AURA_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER = 0.5;
+  static float AURA_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER = 0.4;
   
       //T2
   static String AURA_SKILL_A_T2_NAME = "Tension";

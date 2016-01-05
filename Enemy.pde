@@ -62,6 +62,8 @@ class Enemy{
       ellipse(x,y,size,size);
       drawHurt = false;
     }
+    if(buffState[15]) drawSyncVisual();
+    if(buffState[16]) drawFatalVisual();
     healthBar();
     armorRegenCheck();
     if(armor!=0) armorBar();
@@ -73,7 +75,7 @@ class Enemy{
   void drawShadow(){
     noStroke();
     fill(0,80);
-    ellipse(x-2,y+2,size,size);
+    ellipse(x-3,y+5,size-2,size-2);
   }
   
   void showInfoBox(){
@@ -102,20 +104,22 @@ class Enemy{
     fill(255);
     text("Armor: " + ceil(armor),startOffsetX,startOffsetY + columnHeight*2);
     text("Speed: " + float(round(speed*100))/100,startOffsetX,startOffsetY + columnHeight*3);
+    text("Power: " + power,startOffsetX,startOffsetY + columnHeight*4);
+    text("Bounty: " + bounty,startOffsetX,startOffsetY + columnHeight*5);
     textAlign(CENTER,TOP);
     float showBuffCount = 0;
     for(int i = 0; i < buffState.length; i++){
       if(buffState[i]){
         fill(0,180);
-        rect(0,columnHeight*4+showBuffCount*columnHeight,columnWidth,columnHeight);
+        rect(0,columnHeight*6+showBuffCount*columnHeight,columnWidth,columnHeight);
         if(BuffData.BUFF_TYPE[i] == BUFF){
           fill(0,0,255);
         }else{
           fill(255,0,0);
         }
-        rect(0,columnHeight*4+showBuffCount*columnHeight,columnWidth*(buffTimer[i]-realFrameCount)/BuffData.BUFF_DURATION[i],columnHeight);
+        rect(0,columnHeight*6+showBuffCount*columnHeight,columnWidth*(buffTimer[i]-realFrameCount)/BuffData.BUFF_DURATION[i],columnHeight);
         fill(255);
-        text(BuffData.BUFF_NAME[i],columnWidth/2,startOffsetY+(showBuffCount+4)*columnHeight);
+        text(BuffData.BUFF_NAME[i],columnWidth/2,startOffsetY+(showBuffCount+6)*columnHeight);
         showBuffCount++;
       }
     }
@@ -284,7 +288,15 @@ class Enemy{
   }
   
   void damagePop(float damage){
-    dmgPopup = new PopupText("" + float(round(damage*10))/10, x, y-10, 1, 22, TEXT_NOMOVE);
+    String showDmg;
+    if(damage > 1000000){
+      showDmg = "" + float(round(damage/100000))/10 + "M";
+    }else if(damage > 1000){
+      showDmg = "" + float(round(damage/100))/10 + "K";
+    }else{
+      showDmg = "" + float(round(damage*10))/10;
+    }
+    dmgPopup = new PopupText(showDmg, x, y-10, 1, 22, TEXT_NOMOVE);
   }
   
   void applyBuffEffect(){
@@ -553,6 +565,30 @@ class Enemy{
     ellipse(x,y,80,80);
     popStyle();
     if(realFrameCount-dsTime == dsShowTime) dsVisualState = false;
+  }
+  
+  void drawSyncVisual(){
+    for(int i = 0; i < turret.length; i++){
+      if(turret[i].turretType == AURA && turret[i].skillState[2][3]){
+        pushStyle();
+        strokeWeight(2);
+        stroke(turret[i].turretColor, 100);
+        line(turret[i].x,turret[i].y-turret[i].levelC/2,x,y);
+        popStyle();
+      }
+    }
+  }
+  
+  void drawFatalVisual(){
+    for(int i = 0; i < sentEnemy; i++){
+      if(enemy[i].buffState[16] && i != ID){
+        pushStyle();
+        strokeWeight(2);
+        stroke(255,0,0, 100);
+        line(enemy[i].x,enemy[i].y,x,y);
+        popStyle();
+      }
+    }
   }
   
   void loadStat(){
