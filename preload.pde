@@ -1,6 +1,5 @@
 /* @pjs preload=
-"
-whitrabt.ttf,
+"whitrabt.ttf,
 SourceCodePro-Bold.ttf,
 img/bg0.png,
 img/bg1.png,
@@ -37,5 +36,4 @@ img/mainBG/bg8.png,
 img/mainBG/bg9.png,
 img/mapPreview/map1.png,
 img/mapPreview/map2.png,
-img/mapPreview/map3.png,
-; */
+img/mapPreview/map3.png,"; */
