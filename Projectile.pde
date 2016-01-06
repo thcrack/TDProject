@@ -67,7 +67,7 @@ class Projectile{
           applyBuff(i);
           distanceDecay = turret[turretID].attackDmg;
         }else{
-          distanceDecay = map(dist(x,y,enemy[i].x,enemy[i].y) - enemy[i].size/2,0,TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS,splashDmg,0);
+          distanceDecay = splashDmg;
         }
         if(crit){
           enemy[i].hurt(calDamage(turretID, i, distanceDecay, turret[turretID].critDamageMultiplier));

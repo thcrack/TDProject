@@ -53,6 +53,7 @@ PImage shockwave;
 boolean [] routeGrid = new boolean[gridCount]; //Creates an array to store whether each grid is on the route
 boolean skillMenuState;
 boolean assaultMode;
+boolean autoMode;
 boolean endMenuState;
 boolean pauseState;
 boolean shiftMode = false;
@@ -97,10 +98,12 @@ Button [] diffSelect = new Button [3];
 Button pauseResume, pauseMainmenu;
 Button startGame;
 Button endMainmenu, endRestart;
+Button autoButton;
 PopupText [] popupTextArray = new PopupText [25];
 
 void setup(){
   frameRate(60);
+  //fullScreen(P2D);
   size(1280,800,P2D);
   cursor(HAND);
   //smooth(8);
@@ -121,12 +124,12 @@ void setup(){
   }
   font[1] = createFont("whitrabt.ttf", 38, true);
   font[2] = createFont("whitrabt.ttf", 25, true);
-  font[3] = createFont("DilleniaUPC Bold", 26);
+  font[3] = createFont("SourceCodePro-Bold.ttf", 14);
   font[4] = createFont("SourceCodePro-Bold.ttf", 45);
   font[5] = createFont("whitrabt.ttf", 130);
   font[6] = createFont("whitrabt.ttf", 70);
-  font[7] = createFont("Consolas Bold", 70);
-  font[8] = createFont("Consolas Bold", 15, true);
+  font[7] = createFont("consolab.ttf", 70);
+  font[8] = createFont("consolab.ttf", 15, true);
   imageMode(CENTER);
   currentMap = new mapData(0);
 }
@@ -643,12 +646,17 @@ void showUI(){
   coverUI();
   baseHealthUI();
   goldUI();
-  fpsUI();
+  if(shiftMode){
+    fpsUI();
+  }else{
+    difficultyUI();
+  }
   waveUI();
   timeUI();
   nextUI();
   gameSpeedUI();
   pauseButtonUI();
+  autoButtonUI();
   waveInformationUI();
   switch(UIMode){
     case UI_BUILD:
@@ -706,10 +714,28 @@ void fpsUI(){
   text("FPS: " + fps, 15, 33);
 }
 
+void difficultyUI(){
+  textFont(font[2]);
+  fill(255);
+  String showtext = "";
+  switch(difficulty){
+    case 0:
+      showtext = "EASY";
+      break;    
+    case 1:
+      showtext = "NORMAL";
+      break;    
+    case 2:
+      showtext = "HARD";
+      break;
+  }
+  text(showtext, 15, 33);
+}
+
 void waveUI(){
   textFont(font[2]);
   fill(255);
-  text("Current Wave: " + currentWave, 160, 33);
+  text("Current Wave: " + currentWave, 170, 33);
 }
 
 void timeUI(){
@@ -735,6 +761,15 @@ void pauseButtonUI(){
   pause.show();
 }
 
+void autoButtonUI(){
+  if(autoMode){
+    autoButton = new Button(1231,5,40,40,"A",ENABLED);
+  }else{
+    autoButton = new Button(1231,5,40,40,"A",CLICKABLE);
+  }
+  autoButton.show();
+}
+
 void waveInformationUI(){
   pushStyle();
   textAlign(CENTER,CENTER);
@@ -746,7 +781,7 @@ void waveInformationUI(){
     pushStyle();
     colorMode(HSB,360,100,100);
     fill(realFrameCount*4%360,40,100);
-    text("ASSAULT",random(1236,1238),random(-105,-108),25,500);
+    text("ASSAULT",random(1236,1238),random(-100,-102),25,500);
     popStyle();
   }else{
     textFont(font[5],30);
@@ -797,29 +832,29 @@ void targetIndicateUI(){
 
 void turretBuildUI(){
   if(gold >= TurretLevelData.cannonBuildCost){
-    build[0] = new Button (350,660,200,38,"Build Cannon");
+    build[0] = new Button (350,665,200,38,"Build Cannon");
   }else{
-    build[0] = new Button (350,660,200,38,"Build Cannon",UNCLICKABLE);
+    build[0] = new Button (350,665,200,38,"Build Cannon",UNCLICKABLE);
   }
   textFont(font[2]);
   fill(255);
-  text("Build Cost: " + TurretLevelData.cannonBuildCost, 600, 687);
+  text("Build Cost: " + TurretLevelData.cannonBuildCost, 600, 690);
   build[0].show();
   if(gold >= TurretLevelData.laserBuildCost){
-    build[1] = new Button (350,700,200,38,"Build Laser");
+    build[1] = new Button (350,705,200,38,"Build Laser");
   }else{
-    build[1] = new Button (350,700,200,38,"Build Laser",UNCLICKABLE);
+    build[1] = new Button (350,705,200,38,"Build Laser",UNCLICKABLE);
   }
   textFont(font[2]);
-  text("Build Cost: " + TurretLevelData.laserBuildCost, 600, 727);
+  text("Build Cost: " + TurretLevelData.laserBuildCost, 600, 730);
   build[1].show();
   if(gold >= TurretLevelData.auraBuildCost){
-    build[2] = new Button (350,740,200,38,"Build Aura");
+    build[2] = new Button (350,745,200,38,"Build Aura");
   }else{
-    build[2] = new Button (350,740,200,38,"Build Aura",UNCLICKABLE);
+    build[2] = new Button (350,745,200,38,"Build Aura",UNCLICKABLE);
   }
   textFont(font[2]);
-  text("Build Cost: " + TurretLevelData.auraBuildCost, 600, 767);
+  text("Build Cost: " + TurretLevelData.auraBuildCost, 600, 770);
   build[2].show();
 }
 
@@ -828,8 +863,20 @@ void turretPlacementUI(){
   textFont(font[1]);
   colorMode(HSB, 360,100,100);
   fill(frameCount%360,100,100);
-  text("Place a turret by mouse", 500, 690);
+  text("Place the turret by mouse!", 500, 690);
   if(!routeGrid[mouseOnGrid] && !turret[mouseOnGrid].builtState && mouseCheck()){
+    fill(120,100,100,100);
+    switch(buildMode){
+      case CANNON:
+        ellipse(turret[mouseOnGrid].x + screenOffsetX,turret[mouseOnGrid].y + screenOffsetY,TurretLevelData.cannonRange[0]*2,TurretLevelData.cannonRange[0]*2);
+        break;
+      case LASER:
+        ellipse(turret[mouseOnGrid].x + screenOffsetX,turret[mouseOnGrid].y + screenOffsetY,TurretLevelData.laserRange[0]*2,TurretLevelData.laserRange[0]*2);
+        break;
+      case AURA:
+        ellipse(turret[mouseOnGrid].x + screenOffsetX,turret[mouseOnGrid].y + screenOffsetY,TurretLevelData.auraRange[0]*2,TurretLevelData.auraRange[0]*2);
+        break;
+    }
     image(targetArrow, turret[mouseOnGrid].x + screenOffsetX, turret[mouseOnGrid].y + screenOffsetY - 30, 40, 50);
   }else if(mouseCheck()){
     rectMode(CENTER);
@@ -844,7 +891,7 @@ void turretUpgradeUI(){
   targetIndicateUI();
   textFont(font[1]);
   fill(255);
-  text(turret[targetTurretID].turretName, 330, 690);
+  text(turret[targetTurretID].turretName, 330, 687);
   textFont(font[8]);
   switch(turret[targetTurretID].turretType){
     case CANNON:
@@ -868,43 +915,64 @@ void turretUpgradeUI(){
   textFont(font[2]);
   skillMenu = new Button(60,720,220,40,"Skill Menu");
   skillMenu.show();
-  sell = new Button(1100,660,100,40,"Sell");
+  sell = new Button(1100,665,100,40,"Sell");
   sell.show();
-  text("Price: " + turret[targetTurretID].sellPrice, 1100, 730);
-  text("ARC: lv " + turret[targetTurretID].levelA, 680, 690);
-  text("BIT: lv " + turret[targetTurretID].levelB, 680, 730);
-  text("COS: lv " + turret[targetTurretID].levelC, 680, 770);
+  text("Price: " + turret[targetTurretID].sellPrice, 1100, 735);
+  text("Arc: lv " + turret[targetTurretID].levelA, 680, 695);
+  text("Bit: lv " + turret[targetTurretID].levelB, 680, 735);
+  text("Cos: lv " + turret[targetTurretID].levelC, 680, 775);
+  Button upgradeInfo;
   if(turret[targetTurretID].levelA < TurretLevelData.maxLevel){
+    if(mouseCheck(830,665,120,40)){
+      if(turret[targetTurretID].turretType == LASER){
+        upgradeInfo = new Button(680,620,400,30,"Increases DPS by " + 60*round(getTurretNextLevelInfo(targetTurretID, 0)), font[3], CLICKABLE);
+      }else{
+        upgradeInfo = new Button(680,620,400,30,"Increases damage by " + round(getTurretNextLevelInfo(targetTurretID, 0)), font[3], CLICKABLE);
+      }
+      upgradeInfo.show();
+    }
     if(gold >= turret[targetTurretID].levelAUpgradeCost){
-      upgrade[0] = new Button(830,660,120,38,"Upgrade");
+      upgrade[0] = new Button(830,665,120,38,"Upgrade");
     }else{
-      upgrade[0] = new Button(830,660,120,38,"Upgrade",UNCLICKABLE);
+      upgrade[0] = new Button(830,665,120,38,"Upgrade",UNCLICKABLE);
     }
     upgrade[0].show();
-    text("Cost: " + turret[targetTurretID].levelAUpgradeCost, 965, 690);
+    text("Cost: " + turret[targetTurretID].levelAUpgradeCost, 965, 695);
   }else{
     upgrade[0] = null;
   }
   if(turret[targetTurretID].levelB < TurretLevelData.maxLevel){
+    if(mouseCheck(830,705,120,40)){
+      if(turret[targetTurretID].turretType == LASER){
+        upgradeInfo = new Button(680,620,400,30,"Decreases the cooldown time by " + -roundToFirst(getTurretNextLevelInfo(targetTurretID, 1)) + "s", font[3], CLICKABLE);
+      }else{
+        upgradeInfo = new Button(680,620,400,30,"Increases fire rate by " + roundToFirst(getTurretNextLevelInfo(targetTurretID, 1)) + " /s", font[3], CLICKABLE);
+      }
+      upgradeInfo.show();
+    }
     if(gold >= turret[targetTurretID].levelBUpgradeCost){
-      upgrade[1] = new Button(830,700,120,38,"Upgrade");
+      upgrade[1] = new Button(830,705,120,38,"Upgrade");
     }else{
-      upgrade[1] = new Button(830,700,120,38,"Upgrade",UNCLICKABLE);
+      upgrade[1] = new Button(830,705,120,38,"Upgrade",UNCLICKABLE);
     }
     upgrade[1].show();
-    text("Cost: " + turret[targetTurretID].levelBUpgradeCost, 965, 730);
+    text("Cost: " + turret[targetTurretID].levelBUpgradeCost, 965, 735);
   }else{
     upgrade[2] = null;
   }
   
   if(turret[targetTurretID].levelC < TurretLevelData.maxLevel){
+    if(mouseCheck(830,745,120,40)){
+      upgradeInfo = new Button(680,620,400,30,"Increases range by " + round(getTurretNextLevelInfo(targetTurretID, 2)), font[3], CLICKABLE);
+      upgradeInfo.show();
+    }
     if(gold >= turret[targetTurretID].levelCUpgradeCost){
-      upgrade[2] = new Button(830,740,120,38,"Upgrade");
+      upgrade[2] = new Button(830,745,120,38,"Upgrade");
     }else{
-      upgrade[2] = new Button(830,740,120,38,"Upgrade",UNCLICKABLE);
+      upgrade[2] = new Button(830,745,120,38,"Upgrade",UNCLICKABLE);
     }
     upgrade[2].show();
-    text("Cost: " + turret[targetTurretID].levelCUpgradeCost, 965, 770);
+    text("Cost: " + turret[targetTurretID].levelCUpgradeCost, 965, 775);
   }else{
     upgrade[2] = null;
   }
@@ -936,40 +1004,45 @@ void turretSkillUI(){
       }
       skillPurchase[i+j*5].show();
       if(mouseCheck(skillPurchase[i+j*5].x,skillPurchase[i+j*5].y,skillPurchase[i+j*5].w,skillPurchase[i+j*5].h)){
-        Button skillDescBox = new Button(skillPurchase[0].x,skillPurchase[0].y-30,int(textWidth(turret[targetTurretID].skillDescription[j][i])*0.55)+40,30,turret[targetTurretID].skillDescription[j][i],font[3]);
+        Button skillDescBox;
+        if(shiftMode){
+          skillDescBox = new Button(skillPurchase[0].x,620,int(textWidth(turret[targetTurretID].skillExtra[j][i])*0.55)+40,30,turret[targetTurretID].skillExtra[j][i],font[3]);
+        }else{
+          skillDescBox = new Button(skillPurchase[0].x,620,int(textWidth(turret[targetTurretID].skillDescription[j][i])*0.55)+40,30,turret[targetTurretID].skillDescription[j][i],font[3]);
+        }
         skillDescBox.show();
         if(turret[targetTurretID].skillState[j][i]){
-          Button skillCostBox = new Button(skillPurchase[0].x,skillPurchase[0].y-60,90,30,"BOUGHT",font[3],UNCLICKABLE);
+          Button skillCostBox = new Button(skillPurchase[0].x,590,90,30,"BOUGHT",font[3],UNCLICKABLE);
           skillCostBox.show();
         }else if(gold < turret[targetTurretID].skillCost[j][i]){
-          Button skillCostBox = new Button(skillPurchase[0].x,skillPurchase[0].y-60,90,30,"Cost: " + floor(turret[targetTurretID].skillCost[j][i]),font[3],UNCLICKABLE);
+          Button skillCostBox = new Button(skillPurchase[0].x,590,90,30,"Cost: " + floor(turret[targetTurretID].skillCost[j][i]),font[3],UNCLICKABLE);
           skillCostBox.show();
         }else{
-          Button skillCostBox = new Button(skillPurchase[0].x,skillPurchase[0].y-60,90,30,"Cost: " + floor(turret[targetTurretID].skillCost[j][i]),font[3], CLICKABLE, true);
+          Button skillCostBox = new Button(skillPurchase[0].x,590,90,30,"Cost: " + floor(turret[targetTurretID].skillCost[j][i]),font[3], CLICKABLE, true);
           skillCostBox.show();
         }
         if(j == 0){
           if(turret[targetTurretID].levelA >= TurretSkillData.MIN_LEVEL[i]){
-            Button skillReqBox = new Button(skillPurchase[0].x+90,skillPurchase[0].y-60,240,30,"Level A Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level A Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
             skillReqBox.show();
           }else{
-            Button skillReqBox = new Button(skillPurchase[0].x+90,skillPurchase[0].y-60,240,30,"Level A Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3],UNCLICKABLE);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level A Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3],UNCLICKABLE);
             skillReqBox.show();
           }
         }else if(j == 1){
           if(turret[targetTurretID].levelB >= TurretSkillData.MIN_LEVEL[i]){
-            Button skillReqBox = new Button(skillPurchase[0].x+90,skillPurchase[0].y-60,240,30,"Level B Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level B Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
             skillReqBox.show();
           }else{
-            Button skillReqBox = new Button(skillPurchase[0].x+90,skillPurchase[0].y-60,240,30,"Level B Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level B Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
             skillReqBox.show();
           }
         }else if(j == 2){
           if(turret[targetTurretID].levelB >= TurretSkillData.MIN_LEVEL[i]){
-            Button skillReqBox = new Button(skillPurchase[0].x+90,skillPurchase[0].y-60,240,30,"Level C Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level C Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
             skillReqBox.show();
           }else{
-            Button skillReqBox = new Button(skillPurchase[0].x+90,skillPurchase[0].y-60,240,30,"Level C Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level C Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
             skillReqBox.show();
           }
         }
@@ -1056,6 +1129,7 @@ void enoughGoldIndicate(){
 void gameInit(){ // Game initialization
   skillMenuState = false;
   assaultMode = false;
+  autoMode = false;
   gameSpeed = 1;
   realFrameCount = 0;
   startTime = millis();
@@ -1081,6 +1155,11 @@ void gameInit(){ // Game initialization
   }
 }
 
+void waveStart(){
+  assaultMode = true;
+  sentEnemy = 1;
+}
+
 void waveEnd(){ 
   waveEndGoldBounty(currentWave);
   for(int i = 0; i < gridCount; i++){ // Scan through each grid because the data of turrets is bound to it
@@ -1088,13 +1167,14 @@ void waveEnd(){
       turret[i].target = -1;
     }
   }
-  gameSpeed = 1;
+  if(!autoMode) gameSpeed = 1;
   targetEnemy = -1;
   callPopup("Wave Cleared", float(width/2), float(height/5), 3, 60, TEXT_MOVE);
   assaultMode = false;
   currentWave ++;
   wave.load(currentWave);
   sentEnemy = 0;
+  if(autoMode) waveStart();
 }
 
 void waveEndGoldBounty(int w){
@@ -1235,6 +1315,10 @@ float roundToSecond(float input){
   return float(round(input*100))/100;
 }
 
+float roundToFirst(float input){
+  return float(round(input*10))/10;
+}
+
 void debuffIndicate(float x, float y, float r, float str){
   noStroke();
   fill(255,0,0,str);
@@ -1249,6 +1333,39 @@ void debuffIndicate(float x, float y, float r, float str, float time, float maxT
   arc(x,y,r,r,aStart,a+aStart,PIE);
 }
 
+float getTurretNextLevelInfo(int turretID, int levelID){
+  switch(turret[turretID].turretType){
+    case CANNON:
+      switch(levelID){
+        case 0:
+          return TurretLevelData.cannonDamage[turret[turretID].levelA+1] - TurretLevelData.cannonDamage[turret[turretID].levelA];
+        case 1:
+          return TurretLevelData.cannonRate[turret[turretID].levelB+1] - TurretLevelData.cannonRate[turret[turretID].levelB];
+        case 2:
+          return TurretLevelData.cannonRange[turret[turretID].levelC+1] - TurretLevelData.cannonRange[turret[turretID].levelC];
+      }
+    case LASER:
+      switch(levelID){
+        case 0:
+          return TurretLevelData.laserDamage[turret[turretID].levelA+1] - TurretLevelData.laserDamage[turret[turretID].levelA];
+        case 1:
+          return TurretLevelData.laserRate[turret[turretID].levelB+1] - TurretLevelData.laserRate[turret[turretID].levelB];
+        case 2:
+          return TurretLevelData.laserRange[turret[turretID].levelC+1] - TurretLevelData.laserRange[turret[turretID].levelC];
+      }
+    case AURA:
+      switch(levelID){
+        case 0:
+          return TurretLevelData.auraDamage[turret[turretID].levelA+1] - TurretLevelData.auraDamage[turret[turretID].levelA];
+        case 1:
+          return TurretLevelData.auraRate[turret[turretID].levelB+1] - TurretLevelData.auraRate[turret[turretID].levelB];
+        case 2:
+          return TurretLevelData.auraRange[turret[turretID].levelC+1] - TurretLevelData.auraRange[turret[turretID].levelC];
+      }
+  }
+  return 0;
+}
+
 //INPUT METHODS
 
 void keyPressed(){
@@ -1257,8 +1374,7 @@ void keyPressed(){
   }
   if(key == ' '){
     if(!assaultMode){
-      assaultMode = true;
-      sentEnemy = 1;
+      waveStart();
     }else{
       gameSpeedCycle();
     }
@@ -1505,11 +1621,13 @@ void universalUICheck(){
     gameSpeedCycle();
   }
   if(!assaultMode && mouseCheck(nextWave.x,nextWave.y,nextWave.w,nextWave.h)){
-    assaultMode = true;
-    sentEnemy = 1;
+    waveStart();
   }
   if(mouseCheck(pause.x,pause.y,pause.w,pause.h)){
     pauseState = true;
+  }
+  if(mouseCheck(autoButton)){
+    autoMode = !autoMode;
   }
 }
 

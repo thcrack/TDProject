@@ -15,7 +15,7 @@ class Button{
     if(showState == ENABLED){
       fill(#F7CF2A);
     }else if(showState == UNCLICKABLE){
-      fill(130);
+      fill(150);
     }else if(mouseCheck(x,y,w,h)){
       fill(0,255,0);
     }else{

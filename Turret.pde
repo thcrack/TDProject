@@ -8,6 +8,7 @@ class Turret{
   String turretName;
   String [][] skillName = new String [3][5];
   String [][] skillDescription = new String [3][5];
+  String [][] skillExtra = new String[3][5];
   int target;
   int levelA;
   int levelB;
@@ -688,6 +689,7 @@ class Turret{
     rotate(angleP);
     pushStyle();
     rectMode(CENTER);
+    laserWidth *= 0.5;
     laserDrawBeam();
     for(int i = 0; i < sentEnemy; i++){
       float trueHeight = enemy[i].size+laserWidth;
@@ -701,6 +703,7 @@ class Turret{
     }
     if(skillState[1][4]) laserPiercePenaltyMultiplier = TurretSkillData.LASER_SKILL_B_T5_PENETRATION_AMP;
     laserPierceDamageProcess(laserPitchforkPierceID, TurretSkillData.LASER_SKILL_C_T3_MINI_BEAM_DAMAGE_MULTIPLIER);
+    laserWidth *= 2;
     popStyle();
     popMatrix();
   }
@@ -988,36 +991,51 @@ class Turret{
       
         skillName[0][0] = TurretSkillData.CANNON_SKILL_A_T1_NAME;
         skillDescription[0][0] = TurretSkillData.CANNON_SKILL_A_T1_DESCRIPTION;
+        skillExtra[0][0] = TurretSkillData.CANNON_SKILL_A_T1_EXTRA;
         skillName[0][1] = TurretSkillData.CANNON_SKILL_A_T2_NAME;
         skillDescription[0][1] = TurretSkillData.CANNON_SKILL_A_T2_DESCRIPTION;
+        skillExtra[0][1] = TurretSkillData.CANNON_SKILL_A_T2_EXTRA;
         skillName[0][2] = TurretSkillData.CANNON_SKILL_A_T3_NAME;
         skillDescription[0][2] = TurretSkillData.CANNON_SKILL_A_T3_DESCRIPTION;
+        skillExtra[0][2] = TurretSkillData.CANNON_SKILL_A_T3_EXTRA;
         skillName[0][3] = TurretSkillData.CANNON_SKILL_A_T4_NAME;
         skillDescription[0][3] = TurretSkillData.CANNON_SKILL_A_T4_DESCRIPTION;
+        skillExtra[0][3] = TurretSkillData.CANNON_SKILL_A_T4_EXTRA;
         skillName[0][4] = TurretSkillData.CANNON_SKILL_A_T5_NAME;
         skillDescription[0][4] = TurretSkillData.CANNON_SKILL_A_T5_DESCRIPTION;
+        skillExtra[0][4] = TurretSkillData.CANNON_SKILL_A_T5_EXTRA;
         
         skillName[1][0] = TurretSkillData.CANNON_SKILL_B_T1_NAME;
         skillDescription[1][0] = TurretSkillData.CANNON_SKILL_B_T1_DESCRIPTION;
+        skillExtra[1][0] = TurretSkillData.CANNON_SKILL_B_T1_EXTRA;
         skillName[1][1] = TurretSkillData.CANNON_SKILL_B_T2_NAME;
         skillDescription[1][1] = TurretSkillData.CANNON_SKILL_B_T2_DESCRIPTION;
+        skillExtra[1][1] = TurretSkillData.CANNON_SKILL_B_T2_EXTRA;
         skillName[1][2] = TurretSkillData.CANNON_SKILL_B_T3_NAME;
         skillDescription[1][2] = TurretSkillData.CANNON_SKILL_B_T3_DESCRIPTION;
+        skillExtra[1][2] = TurretSkillData.CANNON_SKILL_B_T3_EXTRA;
         skillName[1][3] = TurretSkillData.CANNON_SKILL_B_T4_NAME;
         skillDescription[1][3] = TurretSkillData.CANNON_SKILL_B_T4_DESCRIPTION;
+        skillExtra[1][3] = TurretSkillData.CANNON_SKILL_B_T4_EXTRA;
         skillName[1][4] = TurretSkillData.CANNON_SKILL_B_T5_NAME;
         skillDescription[1][4] = TurretSkillData.CANNON_SKILL_B_T5_DESCRIPTION;
+        skillExtra[1][4] = TurretSkillData.CANNON_SKILL_B_T5_EXTRA;
         
         skillName[2][0] = TurretSkillData.CANNON_SKILL_C_T1_NAME;
         skillDescription[2][0] = TurretSkillData.CANNON_SKILL_C_T1_DESCRIPTION;
+        skillExtra[2][0] = TurretSkillData.CANNON_SKILL_C_T1_EXTRA;
         skillName[2][1] = TurretSkillData.CANNON_SKILL_C_T2_NAME;
         skillDescription[2][1] = TurretSkillData.CANNON_SKILL_C_T2_DESCRIPTION;
+        skillExtra[2][1] = TurretSkillData.CANNON_SKILL_C_T2_EXTRA;
         skillName[2][2] = TurretSkillData.CANNON_SKILL_C_T3_NAME;
         skillDescription[2][2] = TurretSkillData.CANNON_SKILL_C_T3_DESCRIPTION;
+        skillExtra[2][2] = TurretSkillData.CANNON_SKILL_C_T3_EXTRA;
         skillName[2][3] = TurretSkillData.CANNON_SKILL_C_T4_NAME;
         skillDescription[2][3] = TurretSkillData.CANNON_SKILL_C_T4_DESCRIPTION;
+        skillExtra[2][3] = TurretSkillData.CANNON_SKILL_C_T4_EXTRA;
         skillName[2][4] = TurretSkillData.CANNON_SKILL_C_T5_NAME;
         skillDescription[2][4] = TurretSkillData.CANNON_SKILL_C_T5_DESCRIPTION;
+        skillExtra[2][4] = TurretSkillData.CANNON_SKILL_C_T5_EXTRA;
         break;
       
       case LASER:
@@ -1039,36 +1057,51 @@ class Turret{
       
         skillName[0][0] = TurretSkillData.LASER_SKILL_A_T1_NAME;
         skillDescription[0][0] = TurretSkillData.LASER_SKILL_A_T1_DESCRIPTION;
+        skillExtra[0][0] = TurretSkillData.LASER_SKILL_A_T1_EXTRA;
         skillName[0][1] = TurretSkillData.LASER_SKILL_A_T2_NAME;
         skillDescription[0][1] = TurretSkillData.LASER_SKILL_A_T2_DESCRIPTION;
+        skillExtra[0][1] = TurretSkillData.LASER_SKILL_A_T2_EXTRA;
         skillName[0][2] = TurretSkillData.LASER_SKILL_A_T3_NAME;
         skillDescription[0][2] = TurretSkillData.LASER_SKILL_A_T3_DESCRIPTION;
+        skillExtra[0][2] = TurretSkillData.LASER_SKILL_A_T3_EXTRA;
         skillName[0][3] = TurretSkillData.LASER_SKILL_A_T4_NAME;
         skillDescription[0][3] = TurretSkillData.LASER_SKILL_A_T4_DESCRIPTION;
+        skillExtra[0][3] = TurretSkillData.LASER_SKILL_A_T4_EXTRA;
         skillName[0][4] = TurretSkillData.LASER_SKILL_A_T5_NAME;
         skillDescription[0][4] = TurretSkillData.LASER_SKILL_A_T5_DESCRIPTION;
+        skillExtra[0][4] = TurretSkillData.LASER_SKILL_A_T5_EXTRA;
         
         skillName[1][0] = TurretSkillData.LASER_SKILL_B_T1_NAME;
         skillDescription[1][0] = TurretSkillData.LASER_SKILL_B_T1_DESCRIPTION;
+        skillExtra[1][0] = TurretSkillData.LASER_SKILL_B_T1_EXTRA;
         skillName[1][1] = TurretSkillData.LASER_SKILL_B_T2_NAME;
         skillDescription[1][1] = TurretSkillData.LASER_SKILL_B_T2_DESCRIPTION;
+        skillExtra[1][1] = TurretSkillData.LASER_SKILL_B_T2_EXTRA;
         skillName[1][2] = TurretSkillData.LASER_SKILL_B_T3_NAME;
         skillDescription[1][2] = TurretSkillData.LASER_SKILL_B_T3_DESCRIPTION;
+        skillExtra[1][2] = TurretSkillData.LASER_SKILL_B_T3_EXTRA;
         skillName[1][3] = TurretSkillData.LASER_SKILL_B_T4_NAME;
         skillDescription[1][3] = TurretSkillData.LASER_SKILL_B_T4_DESCRIPTION;
+        skillExtra[1][3] = TurretSkillData.LASER_SKILL_B_T4_EXTRA;
         skillName[1][4] = TurretSkillData.LASER_SKILL_B_T5_NAME;
         skillDescription[1][4] = TurretSkillData.LASER_SKILL_B_T5_DESCRIPTION;
+        skillExtra[1][4] = TurretSkillData.LASER_SKILL_B_T5_EXTRA;
         
         skillName[2][0] = TurretSkillData.LASER_SKILL_C_T1_NAME;
         skillDescription[2][0] = TurretSkillData.LASER_SKILL_C_T1_DESCRIPTION;
+        skillExtra[2][0] = TurretSkillData.LASER_SKILL_C_T1_EXTRA;
         skillName[2][1] = TurretSkillData.LASER_SKILL_C_T2_NAME;
         skillDescription[2][1] = TurretSkillData.LASER_SKILL_C_T2_DESCRIPTION;
+        skillExtra[2][1] = TurretSkillData.LASER_SKILL_C_T2_EXTRA;
         skillName[2][2] = TurretSkillData.LASER_SKILL_C_T3_NAME;
         skillDescription[2][2] = TurretSkillData.LASER_SKILL_C_T3_DESCRIPTION;
+        skillExtra[2][2] = TurretSkillData.LASER_SKILL_C_T3_EXTRA;
         skillName[2][3] = TurretSkillData.LASER_SKILL_C_T4_NAME;
         skillDescription[2][3] = TurretSkillData.LASER_SKILL_C_T4_DESCRIPTION;
+        skillExtra[2][3] = TurretSkillData.LASER_SKILL_C_T4_EXTRA;
         skillName[2][4] = TurretSkillData.LASER_SKILL_C_T5_NAME;
         skillDescription[2][4] = TurretSkillData.LASER_SKILL_C_T5_DESCRIPTION;
+        skillExtra[2][4] = TurretSkillData.LASER_SKILL_C_T5_EXTRA;
         break;
       
       case AURA:
@@ -1090,36 +1123,51 @@ class Turret{
       
         skillName[0][0] = TurretSkillData.AURA_SKILL_A_T1_NAME;
         skillDescription[0][0] = TurretSkillData.AURA_SKILL_A_T1_DESCRIPTION;
+        skillExtra[0][0] = TurretSkillData.AURA_SKILL_A_T1_EXTRA;
         skillName[0][1] = TurretSkillData.AURA_SKILL_A_T2_NAME;
         skillDescription[0][1] = TurretSkillData.AURA_SKILL_A_T2_DESCRIPTION;
+        skillExtra[0][1] = TurretSkillData.AURA_SKILL_A_T2_EXTRA;
         skillName[0][2] = TurretSkillData.AURA_SKILL_A_T3_NAME;
         skillDescription[0][2] = TurretSkillData.AURA_SKILL_A_T3_DESCRIPTION;
+        skillExtra[0][2] = TurretSkillData.AURA_SKILL_A_T3_EXTRA;
         skillName[0][3] = TurretSkillData.AURA_SKILL_A_T4_NAME;
         skillDescription[0][3] = TurretSkillData.AURA_SKILL_A_T4_DESCRIPTION;
+        skillExtra[0][3] = TurretSkillData.AURA_SKILL_A_T4_EXTRA;
         skillName[0][4] = TurretSkillData.AURA_SKILL_A_T5_NAME;
         skillDescription[0][4] = TurretSkillData.AURA_SKILL_A_T5_DESCRIPTION;
+        skillExtra[0][4] = TurretSkillData.AURA_SKILL_A_T5_EXTRA;
         
         skillName[1][0] = TurretSkillData.AURA_SKILL_B_T1_NAME;
         skillDescription[1][0] = TurretSkillData.AURA_SKILL_B_T1_DESCRIPTION;
+        skillExtra[1][0] = TurretSkillData.AURA_SKILL_B_T1_EXTRA;
         skillName[1][1] = TurretSkillData.AURA_SKILL_B_T2_NAME;
         skillDescription[1][1] = TurretSkillData.AURA_SKILL_B_T2_DESCRIPTION;
+        skillExtra[1][1] = TurretSkillData.AURA_SKILL_B_T2_EXTRA;
         skillName[1][2] = TurretSkillData.AURA_SKILL_B_T3_NAME;
         skillDescription[1][2] = TurretSkillData.AURA_SKILL_B_T3_DESCRIPTION;
+        skillExtra[1][2] = TurretSkillData.AURA_SKILL_B_T3_EXTRA;
         skillName[1][3] = TurretSkillData.AURA_SKILL_B_T4_NAME;
         skillDescription[1][3] = TurretSkillData.AURA_SKILL_B_T4_DESCRIPTION;
+        skillExtra[1][3] = TurretSkillData.AURA_SKILL_B_T4_EXTRA;
         skillName[1][4] = TurretSkillData.AURA_SKILL_B_T5_NAME;
         skillDescription[1][4] = TurretSkillData.AURA_SKILL_B_T5_DESCRIPTION;
+        skillExtra[1][4] = TurretSkillData.AURA_SKILL_B_T5_EXTRA;
         
         skillName[2][0] = TurretSkillData.AURA_SKILL_C_T1_NAME;
         skillDescription[2][0] = TurretSkillData.AURA_SKILL_C_T1_DESCRIPTION;
+        skillExtra[2][0] = TurretSkillData.AURA_SKILL_C_T1_EXTRA;
         skillName[2][1] = TurretSkillData.AURA_SKILL_C_T2_NAME;
         skillDescription[2][1] = TurretSkillData.AURA_SKILL_C_T2_DESCRIPTION;
+        skillExtra[2][1] = TurretSkillData.AURA_SKILL_C_T2_EXTRA;
         skillName[2][2] = TurretSkillData.AURA_SKILL_C_T3_NAME;
         skillDescription[2][2] = TurretSkillData.AURA_SKILL_C_T3_DESCRIPTION;
+        skillExtra[2][2] = TurretSkillData.AURA_SKILL_C_T3_EXTRA;
         skillName[2][3] = TurretSkillData.AURA_SKILL_C_T4_NAME;
         skillDescription[2][3] = TurretSkillData.AURA_SKILL_C_T4_DESCRIPTION;
+        skillExtra[2][3] = TurretSkillData.AURA_SKILL_C_T4_EXTRA;
         skillName[2][4] = TurretSkillData.AURA_SKILL_C_T5_NAME;
         skillDescription[2][4] = TurretSkillData.AURA_SKILL_C_T5_DESCRIPTION;
+        skillExtra[2][4] = TurretSkillData.AURA_SKILL_C_T5_EXTRA;
         break;
     }
   }

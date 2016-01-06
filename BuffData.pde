@@ -14,7 +14,7 @@ static class BuffData{
     "Morale", 
     "Cancer", // 10
     "BloodLust",
-    "Curse",
+    "Cursed",
     "Freezed",
     "Shockwave", 
     "Synchronize", //15
