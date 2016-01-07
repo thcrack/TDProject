@@ -89,7 +89,7 @@ class Enemy{
     noStroke();
     translate(1000,1);
     fill(0,180);
-    rect(0,0,columnWidth,columnHeight*4);
+    rect(0,0,columnWidth,columnHeight*6);
     textFont(font[7]);
     textSize(17);
     textAlign(LEFT,TOP);
@@ -255,6 +255,7 @@ class Enemy{
   
   void endCheck(){
     if(OnGrid == lastGrid){
+      sfxBaseHit.trigger();
       baseHealth -= power;
       callPopup("-" + power, x, y, 0, 30, TEXT_MOVE);
       init();

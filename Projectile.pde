@@ -35,6 +35,7 @@ class Projectile{
           explosion(x,y,i);
         }else{
           applyBuff(i);
+          if(UIMode != UI_MAINMENU) sfxEnemyHit.trigger();
           if(checkCritTrigger(turretID,turret[turretID].critChance)){
             enemy[i].hurt(calDamage(turretID, i, turret[turretID].attackDmg, turret[turretID].critDamageMultiplier));
             enemy[i].critPop();
@@ -64,6 +65,7 @@ class Projectile{
       if(dist(x, y, enemy[i].x, enemy[i].y) - enemy[i].size/2 <= TurretSkillData.CANNON_SKILL_C_T3_EXPLOSION_RADIUS){
         float distanceDecay;
         if(i == primaryID){
+          sfxEnemyHit.trigger();
           applyBuff(i);
           distanceDecay = turret[turretID].attackDmg;
         }else{

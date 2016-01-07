@@ -61,11 +61,13 @@ class Turret{
     rateConvert();
     if(target != -1 && cooldown && enemy[target].x > 0){
       attack();
+      if(UIMode != UI_MAINMENU) cueSound();
     }else if(turretType == LASER){
       laserHeat -= 3;
       laserHeat = constrain(laserHeat,0,laserOverheatThreshold);
     }else if(turretType == AURA && cooldown && skillState[2][3] && auraCheckSync()){
       attack();
+      cueSound();
     }
     if(!cooldown){
       if(turretType == LASER){
@@ -240,6 +242,24 @@ class Turret{
     fill(255);
     text("x" + (1+round(auraMeditationCharge)),x,y-levelC/2);
     popStyle();
+  }
+  
+  void cueSound(){
+    switch(turretType){
+      case CANNON:
+        sfxCannonAttack.trigger();
+        break;
+      case LASER:
+        if(critMode){
+          laserSoundCheckCrit = true;
+        }else{
+          laserSoundCheck = true;
+        }
+        break;
+      case AURA:
+        sfxAuraAttack.trigger();
+        break;
+    }
   }
   
   void critCheck(){
@@ -778,6 +798,7 @@ class Turret{
         enemy[deathstarTarget].dsVisualState = true;
         enemy[deathstarTarget].dsTime = realFrameCount;
         enemy[deathstarTarget].hurt(deathstarDamage);
+        sfxLaserDS.trigger();
       }
     }
   }

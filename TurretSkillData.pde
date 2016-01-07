@@ -158,8 +158,8 @@ static class TurretSkillData{
       //T5
   static String LASER_SKILL_A_T5_NAME = "DEATHSTAR";
   static String LASER_SKILL_A_T5_DESCRIPTION = "Calls a ray from above, damaging a random victim caught by the laser.";
-  static float LASER_SKILL_A_T5_DAMAGE_INTERVAL = 15;
-  static float LASER_SKILL_A_T5_BONUS_DAMAGE_MULTIPLIER = 60;
+  static float LASER_SKILL_A_T5_DAMAGE_INTERVAL = 30;
+  static float LASER_SKILL_A_T5_BONUS_DAMAGE_MULTIPLIER = 120;
   static String LASER_SKILL_A_T5_EXTRA = "Damage: " + floor(LASER_SKILL_A_T5_BONUS_DAMAGE_MULTIPLIER/60*100) + "% of DPS / Attack Interval: " + LASER_SKILL_A_T5_DAMAGE_INTERVAL/60 + "s";
   
   

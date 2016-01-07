@@ -1,3 +1,10 @@
+import ddf.minim.*;
+import ddf.minim.analysis.*;
+import ddf.minim.effects.*;
+import ddf.minim.signals.*;
+import ddf.minim.spi.*;
+import ddf.minim.ugens.*;
+
 static final int CANNON = 0;
 static final int LASER = 1;
 static final int AURA = 2;
@@ -52,6 +59,8 @@ PImage laserBeam;
 PImage shockwave;
 boolean [] routeGrid = new boolean[gridCount]; //Creates an array to store whether each grid is on the route
 boolean skillMenuState;
+boolean laserSoundCheck;
+boolean laserSoundCheckCrit;
 boolean assaultMode;
 boolean autoMode;
 boolean endMenuState;
@@ -77,6 +86,11 @@ int difficulty;
 int difficultySelection = -1;
 int mapSelection = -1;
 int startTime;
+int lastFrameTime;
+int fps;
+MoogFilter.Type filterType = MoogFilter.Type.LP;
+int filterFQ = 300;
+int filterNormalFQ = 20000;
 float baseHealth;
 float glitch = 12;
 float baseMaxHealth = 100;
@@ -101,15 +115,82 @@ Button endMainmenu, endRestart;
 Button autoButton;
 PopupText [] popupTextArray = new PopupText [25];
 
+//SOUND RELATED
+
+Minim minim;
+AudioOutput out;
+Sampler sfxClick, sfxBuild, sfxError, sfxCannonAttack, sfxCannonCrit, sfxAuraAttack, sfxEnemyHit, sfxWaveEnd, sfxBaseHit, sfxLaserDS;
+AudioPlayer sfxLaserAttack, sfxLaserCrit;
+//AudioPlayer [] bgm = new AudioPlayer [7];
+FilePlayer [] bgm = new FilePlayer [9];
+MoogFilter filter;
+
 void setup(){
   frameRate(60);
   //fullScreen(P2D);
   size(1280,800,P2D);
   cursor(HAND);
   //smooth(8);
-  UIMode = UI_MAINMENU;
-  menuInit();
-  realFrameCount = 0;
+  
+  font[1] = createFont("whitrabt.ttf", 38, true);
+  font[2] = createFont("whitrabt.ttf", 25, true);
+  font[3] = createFont("SourceCodePro-Bold.ttf", 14);
+  font[4] = createFont("SourceCodePro-Bold.ttf", 45);
+  font[5] = createFont("whitrabt.ttf", 130);
+  font[6] = createFont("whitrabt.ttf", 70);
+  font[7] = createFont("consolab.ttf", 70);
+  font[8] = createFont("consolab.ttf", 15, true);
+  
+  minim = new Minim(this);
+  out = minim.getLineOut();
+  out.setVolume(0.5);
+  
+  filter = new MoogFilter(filterNormalFQ,0.7);
+  filter.type = filterType;
+  
+  bgm[0] = new FilePlayer(minim.loadFileStream("bgm/robots.mp3"));
+  bgm[1] = new FilePlayer(minim.loadFileStream("bgm/bx3.mp3"));
+  bgm[2] = new FilePlayer(minim.loadFileStream("bgm/hexagon.mp3"));
+  bgm[3] = new FilePlayer(minim.loadFileStream("bgm/sudden.mp3"));
+  bgm[4] = new FilePlayer(minim.loadFileStream("bgm/technologic.mp3"));
+  bgm[5] = new FilePlayer(minim.loadFileStream("bgm/maths.mp3"));
+  bgm[6] = new FilePlayer(minim.loadFileStream("bgm/exposed.mp3"));
+  bgm[7] = new FilePlayer(minim.loadFileStream("bgm/exit.mp3"));
+  bgm[8] = new FilePlayer(minim.loadFileStream("bgm/blood.mp3"));
+  
+  //bgm[0] = minim.loadFile("bgm/robots.mp3");
+  //bgm[1] = minim.loadFile("bgm/bx3.mp3");
+  //bgm[2] = minim.loadFile("bgm/hexagon.mp3");
+  //bgm[3] = minim.loadFile("bgm/sudden.mp3");
+  //bgm[4] = minim.loadFile("bgm/technologic.mp3");
+  //bgm[5] = minim.loadFile("bgm/maelstrom.mp3");
+  //bgm[6] = minim.loadFile("bgm/blood.mp3");
+  sfxLaserAttack = minim.loadFile("sfx/laser_attack.mp3");
+  sfxLaserCrit = minim.loadFile("sfx/laser_crit.mp3");
+  
+  sfxClick = new Sampler("sfx/click.mp3", 1, minim);
+  sfxBuild = new Sampler("sfx/build.mp3", 1, minim);
+  sfxError = new Sampler("sfx/error.mp3", 1, minim);
+  sfxCannonAttack = new Sampler("sfx/cannon_attack.mp3", 1, minim);
+  sfxCannonCrit = new Sampler("sfx/cannon_crit.mp3", 1, minim);
+  sfxAuraAttack = new Sampler("sfx/aura_attack.mp3", 1, minim);
+  sfxEnemyHit = new Sampler("sfx/enemy_hit.mp3", 1, minim);
+  sfxWaveEnd = new Sampler("sfx/wave_end.mp3",1,minim);
+  sfxBaseHit = new Sampler("sfx/base_hit.mp3",1,minim);
+  sfxLaserDS = new Sampler("sfx/laser_ds.mp3",1,minim);
+  
+  
+  sfxClick.patch(out);
+  sfxBuild.patch(out);
+  sfxError.patch(out);;
+  sfxCannonAttack.patch(out);
+  sfxCannonCrit.patch(out);
+  sfxAuraAttack.patch(out);
+  sfxEnemyHit.patch(out);
+  sfxWaveEnd.patch(out);
+  sfxBaseHit.patch(out);
+  sfxLaserDS.patch(out);
+  
   laserBeam = loadImage("img/laserbeam.png");
   targetArrow = loadImage("img/green_arrow.png");
   shockwave = loadImage("img/shockwave.png");
@@ -122,20 +203,19 @@ void setup(){
   for(int i = 0; i < 3; i++){
     mapPreview[i] = loadImage("img/mapPreview/map" + (i+1) + ".png");
   }
-  font[1] = createFont("whitrabt.ttf", 38, true);
-  font[2] = createFont("whitrabt.ttf", 25, true);
-  font[3] = createFont("SourceCodePro-Bold.ttf", 14);
-  font[4] = createFont("SourceCodePro-Bold.ttf", 45);
-  font[5] = createFont("whitrabt.ttf", 130);
-  font[6] = createFont("whitrabt.ttf", 70);
-  font[7] = createFont("consolab.ttf", 70);
-  font[8] = createFont("consolab.ttf", 15, true);
+  
+  UIMode = UI_MAINMENU;
+  menuInit();
+  realFrameCount = 0;
+
   imageMode(CENTER);
   currentMap = new mapData(0);
 }
 
 void menuInit(){
   gameInit();
+  changeBGM(0);
+  filter.frequency.setLastValue(filterNormalFQ);
   endMenuState = false;
   difficultySelection = -1;
   mapSelection = -1;
@@ -261,6 +341,7 @@ void menuDemo(){
     demoTurret[i].show();
     demoTurret[i].detect();
   }
+  checkLaserSound();
   for(int i = 0; i < sentEnemy; i++){
     enemy[i].demoShow();
     enemy[i].move();
@@ -288,6 +369,8 @@ void drawGameplay(){
         turret[i].show();
       }
     }
+    
+    checkLaserSound();
     
     //Enemy's actions
     if(assaultMode){
@@ -330,6 +413,10 @@ void drawGameplay(){
       UIMode = UI_PAUSE;
     }
     if(baseHealth<=0){
+      changeBGM(bgm.length-1);
+      laserSoundCheck = false;
+      laserSoundCheckCrit = false;
+      checkLaserSound();
       endFrame = frameCount;
       UIMode = UI_GAMEOVER;
     }
@@ -710,7 +797,10 @@ void goldUI(){
 void fpsUI(){
   textFont(font[2]);
   fill(255);
-  int fps = floor(frameCount*1000/millis());
+  if(realFrameCount%10==0){
+    fps = floor(10000/(millis() - lastFrameTime));
+    lastFrameTime = millis();
+  }
   text("FPS: " + fps, 15, 33);
 }
 
@@ -1006,7 +1096,7 @@ void turretSkillUI(){
       if(mouseCheck(skillPurchase[i+j*5].x,skillPurchase[i+j*5].y,skillPurchase[i+j*5].w,skillPurchase[i+j*5].h)){
         Button skillDescBox;
         if(shiftMode){
-          skillDescBox = new Button(skillPurchase[0].x,620,int(textWidth(turret[targetTurretID].skillExtra[j][i])*0.55)+40,30,turret[targetTurretID].skillExtra[j][i],font[3]);
+          skillDescBox = new Button(skillPurchase[0].x,620,int(textWidth(turret[targetTurretID].skillExtra[j][i])*0.55)+40,30,turret[targetTurretID].skillExtra[j][i],font[3],ENABLED);
         }else{
           skillDescBox = new Button(skillPurchase[0].x,620,int(textWidth(turret[targetTurretID].skillDescription[j][i])*0.55)+40,30,turret[targetTurretID].skillDescription[j][i],font[3]);
         }
@@ -1023,26 +1113,26 @@ void turretSkillUI(){
         }
         if(j == 0){
           if(turret[targetTurretID].levelA >= TurretSkillData.MIN_LEVEL[i]){
-            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level A Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Arc Level Requirement: lv" + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
             skillReqBox.show();
           }else{
-            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level A Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3],UNCLICKABLE);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Arc Level Requirement: lv" + floor(TurretSkillData.MIN_LEVEL[i]),font[3],UNCLICKABLE);
             skillReqBox.show();
           }
         }else if(j == 1){
           if(turret[targetTurretID].levelB >= TurretSkillData.MIN_LEVEL[i]){
-            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level B Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Bit Level Requirement: lv" + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
             skillReqBox.show();
           }else{
-            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level B Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Bit Level Requirement: lv" + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
             skillReqBox.show();
           }
         }else if(j == 2){
           if(turret[targetTurretID].levelB >= TurretSkillData.MIN_LEVEL[i]){
-            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level C Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Cos Level Requirement: lv" + floor(TurretSkillData.MIN_LEVEL[i]),font[3], CLICKABLE, true);
             skillReqBox.show();
           }else{
-            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Level C Requirement: " + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
+            Button skillReqBox = new Button(skillPurchase[0].x+90,590,240,30,"Cos Level Requirement: lv" + floor(TurretSkillData.MIN_LEVEL[i]),font[3], UNCLICKABLE);
             skillReqBox.show();
           }
         }
@@ -1093,7 +1183,7 @@ void drawGrids(){
           colorMode(HSB,360,100,100);
           fill(frameCount%360,100,80);
         }else if(assaultMode){
-          fill(80+80*sin(frameCount/(PI*4)),255,80+80*sin(frameCount/(PI*4)));
+          fill(100+100*sin(frameCount/(PI*2)),255,100+100*sin(frameCount/(PI*2)));
         }else{
           fill(0,200,0);
         }
@@ -1130,8 +1220,12 @@ void gameInit(){ // Game initialization
   skillMenuState = false;
   assaultMode = false;
   autoMode = false;
+  laserSoundCheck = false;
+  laserSoundCheckCrit = false;
   gameSpeed = 1;
   realFrameCount = 0;
+  lastFrameTime = 0;
+  fps = 0;
   startTime = millis();
   difficulty = difficultySelection;
   sentEnemy = 0;
@@ -1156,7 +1250,9 @@ void gameInit(){ // Game initialization
 }
 
 void waveStart(){
+  filter.frequency.setLastValue(filterNormalFQ);
   assaultMode = true;
+  if(!autoMode) callPopup("Good Luck!", float(width/2), float(height/5), 3, 60, TEXT_MOVE);
   sentEnemy = 1;
 }
 
@@ -1167,19 +1263,61 @@ void waveEnd(){
       turret[i].target = -1;
     }
   }
-  if(!autoMode) gameSpeed = 1;
   targetEnemy = -1;
-  callPopup("Wave Cleared", float(width/2), float(height/5), 3, 60, TEXT_MOVE);
   assaultMode = false;
   currentWave ++;
   wave.load(currentWave);
   sentEnemy = 0;
-  if(autoMode) waveStart();
+  sfxWaveEnd.trigger();
+  if(autoMode){
+    waveStart();
+  }else{
+    callPopup("Wave Cleared", float(width/2), float(height/5), 3, 60, TEXT_MOVE);
+    filter.frequency.setLastValue(filterFQ);
+    gameSpeed = 1;
+  }
+  waveRandomSong();
 }
 
 void waveEndGoldBounty(int w){
   int amount = max(1,ceil(w*baseHealth/baseMaxHealth));
   addGold(amount);
+}
+
+void waveRandomSong(){
+  changeBGM(floor(random(0,bgm.length-1)));
+}
+
+void stopBGM(){
+  for(int i = 0; i < bgm.length; i++){
+    if(bgm[i].isLooping()){
+      bgm[i].pause();
+      filter.unpatch(out);
+      bgm[i].unpatch(filter);
+    }
+  }
+}
+
+void changeBGM(int ID){
+  stopBGM();
+  bgm[ID].rewind();
+  bgm[ID].loop();
+  bgm[ID].patch(filter).patch(out);
+}
+
+void checkLaserSound(){
+  if(laserSoundCheckCrit){
+    sfxLaserAttack.pause();
+    if(!sfxLaserCrit.isPlaying()) sfxLaserCrit.loop();
+  }else if(laserSoundCheck){
+    sfxLaserCrit.pause();
+    if(!sfxLaserAttack.isPlaying()) sfxLaserAttack.loop();
+  }else{
+    sfxLaserAttack.pause();
+    sfxLaserCrit.pause();
+  }
+  laserSoundCheckCrit = false;
+  laserSoundCheck = false;
 }
 
 // ENEMY GROWTH METHODS
@@ -1415,11 +1553,14 @@ void mousePressed(){
 }
 
 void mouseReleased(){
+  sfxClick.trigger();
   switch(UIMode){
     case UI_MAINMENU:
       if(mouseCheck(startGame.x,startGame.y,startGame.w,startGame.h) && startGame.showState == CLICKABLE){
         gameInit();
         UIMode = UI_BUILD;
+        waveRandomSong();
+        filter.frequency.setLastValue(filterFQ);
       }
       for(int i = 0; i < diffSelect.length; i++){
         if(mouseCheck(diffSelect[i].x,diffSelect[i].y,diffSelect[i].w,diffSelect[i].h)){
@@ -1480,8 +1621,12 @@ void mouseReleased(){
         targetTurretID = mouseOnGrid;
         buildMode = -1;
         spendGold(buildCost);
+        sfxClick.stop();
+        sfxBuild.trigger();
       }else{
         buildMode = -1;
+        sfxClick.stop();
+        sfxError.trigger();
       }
       break;
       
@@ -1610,6 +1755,8 @@ void mouseReleased(){
         if(mouseCheck(endRestart)){
           gameInit();
           UIMode = UI_BUILD;
+          waveRandomSong();
+          filter.frequency.setLastValue(filterFQ);
         }
       }
       break;
