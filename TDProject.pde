@@ -17,6 +17,11 @@ static final int ENEMY_FAST = 2;
 static final int ENEMY_TANK = 3;
 static final int ENEMY_SUPPORT = 4;
 
+static final int MOVE_U = 1;
+static final int MOVE_D = 2;
+static final int MOVE_L = 3;
+static final int MOVE_R = 4;
+
 static final int UI_BUILD = 0;
 static final int UI_PLACEMENT = 1;
 static final int UI_UPGRADE = 2;
@@ -54,7 +59,7 @@ PFont [] font = new PFont [10];
 PImage targetArrow;
 PImage [] bgTiles = new PImage [20];
 PImage [] mainBG = new PImage [10];
-PImage [] mapPreview = new PImage [3];
+PImage [] mapPreview = new PImage [5];
 PImage laserBeam;
 PImage shockwave;
 boolean [] routeGrid = new boolean[gridCount]; //Creates an array to store whether each grid is on the route
@@ -85,6 +90,7 @@ int targetEnemy = -1;
 int difficulty;
 int difficultySelection = -1;
 int mapSelection = -1;
+int mapInitDir;
 int startTime;
 int lastFrameTime;
 int fps;
@@ -107,7 +113,7 @@ Button [] upgrade = new Button [3];
 Button [] build = new Button [3];
 Button [] skillPurchase = new Button [15];
 Button sell, skillMenu, gameSpeedChange, nextWave, pause;
-Button [] mapSelect = new Button [3];
+Button [] mapSelect = new Button [5];
 Button [] diffSelect = new Button [3];
 Button pauseResume, pauseMainmenu;
 Button startGame;
@@ -200,7 +206,7 @@ void setup(){
   for(int i = 0; i < 10; i++){
     mainBG[i] = loadImage("img/mainBG/bg" + i + ".png");
   }
-  for(int i = 0; i < 3; i++){
+  for(int i = 0; i < mapPreview.length; i++){
     mapPreview[i] = loadImage("img/mapPreview/map" + (i+1) + ".png");
   }
   
@@ -220,6 +226,7 @@ void menuInit(){
   difficultySelection = -1;
   mapSelection = -1;
   targetEnemy = -1;
+  currentMap = new mapData(0);
   difficulty = DIFFICULTY_EASY;
   demoTurret[0] = new Turret(21,CANNON);
   demoTurret[1] = new Turret(34,LASER);
@@ -230,7 +237,6 @@ void menuInit(){
   enemy[3] = new Enemy(ENEMY_SUPPORT,3,true);
   sentEnemy = 4;
   gameSpeed = 1;
-  currentMap = new mapData(0);
 }
 
 void draw(){
@@ -292,9 +298,11 @@ void drawMainMenu(){
   diffSelect[0] = new Button(760, 220, 140, 50, "EASY", font[1]);
   diffSelect[1] = new Button(760, 320, 140, 50, "NORMAL", font[1]);
   diffSelect[2] = new Button(760, 420, 140, 50, "HARD", font[1]);
-  mapSelect[0] = new Button(920, 220, 140, 50, "MAP 1", font[1]);
-  mapSelect[1] = new Button(920, 320, 140, 50, "MAP 2", font[1]);
-  mapSelect[2] = new Button(920, 420, 140, 50, "MAP 3", font[1]);
+  mapSelect[0] = new Button(920, 120, 140, 50, "MAP 1", font[1]);
+  mapSelect[1] = new Button(920, 220, 140, 50, "MAP 2", font[1]);
+  mapSelect[2] = new Button(920, 320, 140, 50, "MAP 3", font[1]);
+  mapSelect[3] = new Button(920, 420, 140, 50, "MAP 4", font[1]);
+  mapSelect[4] = new Button(920, 520, 140, 50, "MAP 5", font[1]);
   for(int i = 0; i < mapPreview.length; i++){
     if(mapSelection == i+1){
       tint(#F7CF2A);
@@ -303,7 +311,7 @@ void drawMainMenu(){
     }else{
       tint(255,160);
     }
-    image(mapPreview[i],1060,220+100*i,100,50);
+    image(mapPreview[i],1060,120+100*i,100,50);
   }
   for(int i = 0; i < diffSelect.length; i++){
     if(difficultySelection == i) diffSelect[i].showState = ENABLED;
@@ -388,7 +396,7 @@ void drawGameplay(){
         if(i == targetEnemy && enemy[i].state) enemy[i].showInfoBox();
       }
       
-      if((enemy[sentEnemy-1].x>=30 || !enemy[sentEnemy-1].state) && sentEnemy < currentWaveMaxEnemy){ // When the timer is up and there are still enemies not sent out yet in the current wave
+      if((enemySentCheck(sentEnemy-1) || !enemy[sentEnemy-1].state) && sentEnemy < currentWaveMaxEnemy){ // When the timer is up and there are still enemies not sent out yet in the current wave
         sentEnemy ++; // Add the amount of enemies sent
       }
       if(sentEnemy == currentWaveMaxEnemy){ // Check if there's no more enemy not sent out in the current wave
@@ -502,7 +510,7 @@ void drawEndScene(){
     noStroke();
     fill(0,0,100,2);
     rect(0,0,width,height);
-    tint((frameCount*8)%360,100,100,300-(frameCount-endFrame));
+    tint((frameCount*8)%360,60,100,300-(frameCount-endFrame));
     image(shockwave,turret[lastGrid].x,turret[lastGrid].y,(frameCount-endFrame)*20,(frameCount-endFrame)*20);
   }
   popStyle();
@@ -637,7 +645,7 @@ float skillDamageMultiplier(int turretID, int enemyID){
       if(turret[turretID].skillState[0][0]){
         damageMultiplier += TurretSkillData.CANNON_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
       }
-      if(turret[turretID].skillState[0][1]){
+      if(turret[turretID].skillState[0][1] && enemyID != -1){
         damageMultiplier += (1-(enemy[enemyID].health/enemy[enemyID].maxHealth)) * TurretSkillData.CANNON_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER;
       }
       break;
@@ -647,47 +655,17 @@ float skillDamageMultiplier(int turretID, int enemyID){
         damageMultiplier += TurretSkillData.LASER_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
       }
       if(turret[turretID].skillState[0][1]){
-        damageMultiplier += max(0,map(turret[turretID].laserHeat, TurretSkillData.LASER_SKILL_A_T2_MIN_HEAT_THRESHOLD, TurretSkillData.LASER_SKILL_A_T2_MAX_DAMAGE_HEAT_CAP, 0, TurretSkillData.LASER_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER));
+        damageMultiplier += constrain(map(turret[turretID].laserHeat, TurretSkillData.LASER_SKILL_A_T2_MIN_HEAT_THRESHOLD, TurretSkillData.LASER_SKILL_A_T2_MAX_DAMAGE_HEAT_CAP, 0, TurretSkillData.LASER_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER),0,TurretSkillData.LASER_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER);
       }
       break;
       
     case AURA:
-      if(turret[turretID].skillState[0][1]){
+      if(turret[turretID].skillState[0][1] && enemyID != -1){
         float distance = (dist(turret[turretID].x, turret[turretID].y, enemy[enemyID].x, enemy[enemyID].y) - enemy[enemyID].size/2);
         float maxDistance = (turret[turretID].attackRange * TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_EFFECTIVE_RANGE);
         damageMultiplier += max(0,(1 - ( distance / maxDistance ))) * TurretSkillData.AURA_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER;
       }
-      if(turret[turretID].skillState[1][1]){
-        damageMultiplier += turret[turretID].auraMeditationCharge;
-      }
-      if(turret[turretID].skillState[2][1]){
-        damageMultiplier += turret[turretID].auraDecrepifyBonus;
-      }
-      break;
-  }
-  return damageMultiplier;
-}
-
-float skillDamageMultiplier(int turretID){
-  float damageMultiplier = 1;
-  switch(turret[turretID].turretType){
-    case CANNON:
-      if(turret[turretID].skillState[0][0]){
-        damageMultiplier += TurretSkillData.CANNON_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
-      }
-      break;
-      
-    case LASER:
-      if(turret[turretID].skillState[0][0]){
-        damageMultiplier += TurretSkillData.LASER_SKILL_A_T1_BONUS_DAMAGE_MULTIPLIER;
-      }
-      if(turret[turretID].skillState[0][1]){
-        damageMultiplier += max(0,map(turret[turretID].laserHeat, TurretSkillData.LASER_SKILL_A_T2_MIN_HEAT_THRESHOLD, TurretSkillData.LASER_SKILL_A_T2_MAX_DAMAGE_HEAT_CAP, 0, TurretSkillData.LASER_SKILL_A_T2_MAXIMUM_BONUS_DAMAGE_MULTIPLIER));
-      }
-      break;
-      
-    case AURA:
-      if(turret[turretID].skillState[1][1]){
+      if(turret[turretID].skillState[1][2]){
         damageMultiplier += turret[turretID].auraMeditationCharge;
       }
       if(turret[turretID].skillState[2][1]){
@@ -985,16 +963,16 @@ void turretUpgradeUI(){
   textFont(font[8]);
   switch(turret[targetTurretID].turretType){
     case CANNON:
-      text("ATTACK DAMAGE: " + roundToSecond(turret[targetTurretID].attackDmg*skillDamageMultiplier(targetTurretID)), 330, 710);
+      text("ATTACK DAMAGE: " + roundToSecond(turret[targetTurretID].attackDmg*skillDamageMultiplier(targetTurretID, -1)), 330, 710);
       text("ATTACK RATE: " + roundToSecond(turret[targetTurretID].frameConvert()) + " hit/s", 330, 725);
       break;
     case LASER:
-      text("ATTACK DPS: " + roundToSecond(60*turret[targetTurretID].attackDmg*skillDamageMultiplier(targetTurretID)), 330, 710);
+      text("ATTACK DPS: " + roundToSecond(60*turret[targetTurretID].attackDmg*skillDamageMultiplier(targetTurretID, -1)), 330, 710);
       text("COOLDOWN: " + roundToSecond(turret[targetTurretID].frameConvert()) + " s", 330, 725);
       text("CRIT DURATION: " + roundToSecond(framesConvertSecond(turret[targetTurretID].critDuration)) + " s", 330, 785);
       break;
     case AURA:
-      text("ATTACK DAMAGE: " + roundToSecond(turret[targetTurretID].attackDmg*skillDamageMultiplier(targetTurretID)), 330, 710);
+      text("ATTACK DAMAGE: " + roundToSecond(turret[targetTurretID].attackDmg*skillDamageMultiplier(targetTurretID, -1)), 330, 710);
       text("ATTACK RATE: " + roundToSecond(turret[targetTurretID].frameConvert()) + " hit/s", 330, 725);
       text("CRIT DURATION: " + roundToSecond(framesConvertSecond(turret[targetTurretID].critDuration)) + " s", 330, 785);
       break;
@@ -1233,7 +1211,7 @@ void gameInit(){ // Game initialization
   baseHealth = baseMaxHealth;
   buildMode = -1;
   targetTurretID = -1;
-  if(mapSelection!=-1) currentMap = new mapData(mapSelection); // Load the first data in mapData
+  if(mapSelection!=-1) currentMap = new mapData(mapSelection);
   wave = new waveData(); // Initialize the data for waves 
   currentWave = 1; // Set the number of current wave to 1
   if(difficulty!=-1) wave.load(1); //Load the first wave
@@ -1280,12 +1258,12 @@ void waveEnd(){
 }
 
 void waveEndGoldBounty(int w){
-  int amount = max(1,ceil(w*baseHealth/baseMaxHealth));
+  int amount = constrain(ceil(w*baseHealth/baseMaxHealth),10,100);
   addGold(amount);
 }
 
 void waveRandomSong(){
-  changeBGM(floor(random(0,bgm.length-1)));
+  changeBGM(floor(random(1,bgm.length-1)));
 }
 
 void stopBGM(){
@@ -1323,7 +1301,7 @@ void checkLaserSound(){
 // ENEMY GROWTH METHODS
 
 float enemyMaxHealthGrowth(int enemyType){
-  float mult = pow(0.3*(currentWave-1),2);
+  float mult = pow(EnemyData.GROWTH_POWER[difficulty]*(currentWave-1),2);
   switch(enemyType){
     case ENEMY_NORMAL:
       return EnemyData.NORMAL_HEALTH_GROWTH[difficulty]*mult;
@@ -1338,7 +1316,7 @@ float enemyMaxHealthGrowth(int enemyType){
 }
 
 float enemyArmorGrowth(int enemyType){
-  float mult = pow(0.3*(currentWave-1),2);
+  float mult = pow(EnemyData.GROWTH_POWER[difficulty]*(currentWave-1),2);
   switch(enemyType){
     case ENEMY_NORMAL:
       return EnemyData.NORMAL_ARMOR_GROWTH[difficulty]*mult;
@@ -1367,15 +1345,16 @@ float enemySpeedGrowth(int enemyType){
 }
 
 int enemyBountyGrowth(int enemyType){
+  int wave = min(currentWave, EnemyData.BOUNTY_GROWTH_CAP_WAVE);
   switch(enemyType){
     case ENEMY_NORMAL:
-      return floor(EnemyData.NORMAL_BOUNTY_GROWTH[difficulty]*(currentWave-1));
+      return floor(EnemyData.NORMAL_BOUNTY_GROWTH[difficulty]*(wave-1));
     case ENEMY_FAST:
-      return floor(EnemyData.FAST_BOUNTY_GROWTH[difficulty]*(currentWave-1));
+      return floor(EnemyData.FAST_BOUNTY_GROWTH[difficulty]*(wave-1));
     case ENEMY_TANK:
-      return floor(EnemyData.TANK_BOUNTY_GROWTH[difficulty]*(currentWave-1));
+      return floor(EnemyData.TANK_BOUNTY_GROWTH[difficulty]*(wave-1));
     case ENEMY_SUPPORT:
-      return floor(EnemyData.SUPPORT_BOUNTY_GROWTH[difficulty]*(currentWave-1));
+      return floor(EnemyData.SUPPORT_BOUNTY_GROWTH[difficulty]*(wave-1));
   }
   return 0;
 }
@@ -1405,6 +1384,20 @@ void laserDeathstarEffect(){
 }
 
 // UTILITY METHODS
+
+boolean enemySentCheck(int ID){
+  switch(mapInitDir){
+    case MOVE_U:
+      return (enemy[ID].y <= 555);
+    case MOVE_D:
+      return (enemy[ID].y >= 45);
+    case MOVE_L:
+      return (enemy[ID].x <= 1155);
+    case MOVE_R:
+      return (enemy[ID].x >= 45);
+  }
+  return false;
+}
 
 void callPopup(String showText, float startX, float startY, int textColor, int fontSize, int moveMode){
   for(int i = 1; i < popupTextArray.length; i++){
@@ -1542,8 +1535,9 @@ void keyReleased(){
       case RIGHT:
         waveEnd();
         break;
-      default:
+      case LEFT:
         addGold(1000);
+        break;
     }
   }
 }

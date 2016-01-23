@@ -111,8 +111,8 @@ class Turret{
         break;
         
       case AURA:
-        if(critMode) auraCritModeVisual();
         drawShadow();
+        if(critMode) auraCritModeVisual();
         fill(turretColor);
         noStroke();
         ellipse(x,y-(levelC/2),size,size);
@@ -122,7 +122,7 @@ class Turret{
         ellipse(x,y-(levelC/2),attackRange*2,attackRange*2);
         if(target != -1) critCheck();
         if(skillState[0][3]) auraDrawOrb();
-        if(skillState[1][1]){
+        if(skillState[1][2]){
           auraMeditationProcess();
           auraMeditationVisual();
         }
@@ -230,7 +230,7 @@ class Turret{
   }
   
   void auraMeditationVisual(){
-    float ratio = auraMeditationCharge/TurretSkillData.AURA_SKILL_B_T2_MAXIMUM_BONUS_DAMAGE;
+    float ratio = auraMeditationCharge/TurretSkillData.AURA_SKILL_B_T3_MAXIMUM_BONUS_DAMAGE;
     pushStyle();
     noStroke();
     fill(255,120);
@@ -682,7 +682,7 @@ class Turret{
   void applyBuffOnCrit(int enemyID){
     switch(turretType){
       case AURA:
-        if(turret[turretID].skillState[1][2]){
+        if(turret[turretID].skillState[1][1]){
           enemy[enemyID].getBuff(11,3);
         }
         break;
@@ -844,11 +844,11 @@ class Turret{
   }
   
   void auraMeditationProcess(){
-    if(target==-1){
-      auraMeditationCharge += TurretSkillData.AURA_SKILL_B_T2_CHARGE_RATE_PER_SEC / 60;
-      auraMeditationCharge = min(auraMeditationCharge, TurretSkillData.AURA_SKILL_B_T2_MAXIMUM_BONUS_DAMAGE);
+    if(target==-1 && !(skillState[2][3] && auraCheckSync())){
+      auraMeditationCharge += TurretSkillData.AURA_SKILL_B_T3_CHARGE_RATE_PER_SEC / 60;
+      auraMeditationCharge = min(auraMeditationCharge, TurretSkillData.AURA_SKILL_B_T3_MAXIMUM_BONUS_DAMAGE);
     }else{
-      auraMeditationCharge -= TurretSkillData.AURA_SKILL_B_T2_DRAIN_RATE_PER_SEC / 60;
+      auraMeditationCharge -= TurretSkillData.AURA_SKILL_B_T3_DRAIN_RATE_PER_SEC / 60;
       auraMeditationCharge = max(auraMeditationCharge, 0);
     }
   }

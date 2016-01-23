@@ -6,6 +6,7 @@ class waveData{
     waveID = inputWave;
     if(waveID>50){
       waveID = 40+(waveID%10);
+      if(waveID == 40) waveID = 50;
     }
     switch(waveID){
       case 1:
@@ -89,7 +90,6 @@ class waveData{
         index(1,15);
         break;
       case 25:
-        index(2,10);
         index(4,1);
         index(2,10);
         break;
@@ -102,7 +102,6 @@ class waveData{
       case 28:
         index(4,1);
         index(2,5);
-        index(4,1);
         index(1,5);
         index(4,1);
         break;
@@ -189,6 +188,10 @@ class waveData{
         index(4,1);
         index(1,5);
         index(4,1);
+        for(int i = 0; i < min(5,floor(inputWave/10)-5); i++){
+          index(3,1);
+          index(4,1);
+        }
         index(1,5);
         index(4,1);
         index(2,5);
@@ -237,11 +240,12 @@ class waveData{
         index(2,5);
         index(3,1);
         index(4,2);
-        index(1,5);
-        index(3,1);
-        index(4,2);
-        index(2,5);
-        index(3,1);
+        for(int i = 0; i < min(6,floor(inputWave/10)-4); i++){
+          index(1,5);
+          index(3,1);
+          index(4,2);
+          index(2,5);
+        }
         break;
     }
     currentWaveMaxEnemy = indexCount;
